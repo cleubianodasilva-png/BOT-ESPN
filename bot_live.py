@@ -456,32 +456,30 @@ def gerar_motivo(mercado, stats, sh, sa, fav_final, cantos_atual=0):
     red_a        = stats.get("red_cards_a", 0) if stats else 0
     fav_chutes   = chutes_h if fav_final == "h" else chutes_a
     fav_chutes_g = chutes_gol_h if fav_final == "h" else chutes_gol_a
-    fav_label    = "Casa" if fav_final == "h" else "Fora"
     total_chutes = chutes_h + chutes_a
     total_cantos = cantos_h + cantos_a
     tem_dados    = total_chutes > 0 or total_cantos > 0
 
     if not tem_dados:
-        return f"✅ Favorito: {fav_label} — Estatísticas não disponíveis para esta liga"
+        return "✅ Estatísticas não disponíveis para esta liga"
 
     partes = []
 
-    # Favorito
-    if fav_chutes > 0:
-        partes.append(f"Favorito ({fav_label}) com {fav_chutes} chutes ({fav_chutes_g} no alvo)")
-    else:
-        partes.append(f"Favorito: {fav_label}")
-
     # Volume de jogo
     if total_chutes >= 10:
-        partes.append(f"jogo intenso com {total_chutes} chutes no total")
+        partes.append(f"Jogo intenso com {total_chutes} chutes no total ({chutes_h} casa x {chutes_a} fora)")
     elif total_chutes > 0:
-        partes.append(f"{total_chutes} chutes no total")
+        partes.append(f"{total_chutes} chutes no total ({chutes_h} casa x {chutes_a} fora)")
+
+    # Chutes no alvo
+    total_gol = chutes_gol_h + chutes_gol_a
+    if total_gol > 0:
+        partes.append(f"{total_gol} chutes no alvo ({chutes_gol_h} x {chutes_gol_a})")
 
     # Escanteios
     if total_cantos > 0:
         partes.append(f"{total_cantos} escanteios cobrados ({cantos_h} x {cantos_a})")
-    
+
     # Cartão vermelho
     if red_h > 0 or red_a > 0:
         partes.append(f"⚠️ Cartão vermelho: {'Casa' if red_h > 0 else 'Fora'}")
@@ -639,18 +637,11 @@ def run():
         # Busca stats UMA vez — reutiliza para tudo
         stats = get_stats_espn(fid, h, a)
 
-        # Determinar favorito pelas odds — usa chutes como fallback se odds não disponível
+        # Determinar favorito pelas odds
         fav_final = get_favorito_odds(h, a)
         if not fav_final:
-            ch = stats.get("chutes_tot_h", 0) if stats else 0
-            ca = stats.get("chutes_tot_a", 0) if stats else 0
-            if ch > ca:
-                fav_final = "h"
-            elif ca > ch:
-                fav_final = "a"
-            else:
-                fav_final = "h"
-            print(f"[FAV-FALLBACK] {h} x {a} — favorito definido por chutes/casa: {fav_final}")
+            fav_final = "?"  # Sem odds disponível — favorito não identificado
+            print(f"[FAV-FALLBACK] {h} x {a} — sem odds disponível")
 
         # Cartão vermelho do favorito
         red_fav = stats.get(f"red_cards_{fav_final}", 0) if stats else 0
