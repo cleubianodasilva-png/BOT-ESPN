@@ -133,7 +133,39 @@ def send_telegram(msg, botoes=True, reply_to=None, marca=None):
 # ═══════════════════════════════════════════════════════════════════════════════
 # ARQUIVOS LOCAIS
 # ═══════════════════════════════════════════════════════════════════════════════
+GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
+GITHUB_REPO  = os.environ.get("GITHUB_REPOSITORY", "")
+SENT_API_PATH = "sent_live_signals.json"
+
+def _github_headers():
+    return {
+        "Authorization": f"Bearer {GITHUB_TOKEN}",
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28"
+    }
+
 def load_sent():
+    """Carrega sent do GitHub (fonte de verdade) + arquivo local como fallback."""
+    # Tenta GitHub API primeiro
+    if GITHUB_TOKEN and GITHUB_REPO:
+        try:
+            url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{SENT_API_PATH}"
+            r = requests.get(url, headers=_github_headers(), timeout=8)
+            if r.status_code == 200:
+                import base64 as _b64
+                data = json.loads(_b64.b64decode(r.json()["content"]).decode())
+                sent = set(data)
+                # Limpa chaves antigas (> 2 dias) para não crescer infinito
+                hoje = datetime.now(BRT).strftime('%Y%m%d')
+                ontem = (datetime.now(BRT) - timedelta(days=1)).strftime('%Y%m%d')
+                sent = {k for k in sent if hoje in k or ontem in k}
+                # Salva localmente também
+                with open(SENT_FILE, 'w') as f: json.dump(list(sent), f)
+                print(f"[SENT] Carregado do GitHub: {len(sent)} chaves")
+                return sent
+        except Exception as e:
+            print(f"[SENT] Erro GitHub load: {e}")
+    # Fallback: arquivo local
     if os.path.exists(SENT_FILE):
         try:
             with open(SENT_FILE, 'r') as f: return set(json.load(f))
@@ -141,7 +173,25 @@ def load_sent():
     return set()
 
 def save_sent(sent):
+    """Salva sent localmente E no GitHub (fonte de verdade)."""
     with open(SENT_FILE, 'w') as f: json.dump(list(sent), f)
+    if GITHUB_TOKEN and GITHUB_REPO:
+        try:
+            import base64 as _b64
+            url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{SENT_API_PATH}"
+            # Pega SHA atual
+            r = requests.get(url, headers=_github_headers(), timeout=8)
+            sha = r.json().get("sha", "") if r.status_code == 200 else ""
+            content_b64 = _b64.b64encode(json.dumps(list(sent)).encode()).decode()
+            payload = {"message": "state: atualiza sent [skip ci]", "content": content_b64}
+            if sha: payload["sha"] = sha
+            r2 = requests.put(url, headers=_github_headers(), json=payload, timeout=10)
+            if r2.status_code in (200, 201):
+                print(f"[SENT] Salvo no GitHub: {len(sent)} chaves")
+            else:
+                print(f"[SENT] Erro GitHub save: {r2.status_code}")
+        except Exception as e:
+            print(f"[SENT] Erro GitHub save: {e}")
 
 def registrar_sinal(fid, mercado, home, away, message_id, extra_val=None):
     sinais = []
