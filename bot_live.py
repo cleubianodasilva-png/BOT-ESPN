@@ -66,8 +66,8 @@ LIGA_NOMES = {
 }
 ESPN_LIGAS = [
     # Europa - 1ª divisão
-    "eng.1","eng.2","eng.3","eng.4","eng.5",
-    "esp.1","esp.2","ger.1","ger.2","ita.1","ita.2","ita.3","ita.4","ita.5","fra.1","fra.2",
+    "eng.1","eng.2","eng.3","eng.4","eng.5","eng.fa","eng.league_cup",
+    "esp.1","esp.2","esp.copa_del_rey","ger.1","ger.2","ger.dfb_pokal","ita.1","ita.2","ita.3","ita.4","ita.5","ita.coppa_italia","fra.1","fra.2",
     "por.1","ned.1","ned.2","ned.3","bel.1","tur.1","tur.2","sco.1","sco.2","sco.3","sco.4",
     "aut.1","aut.2","sui.1","sui.2","den.1","den.2","den.3","den.4","den.5","swe.1","swe.2",
     "nor.1","nor.2","nor.3","gre.1","cze.1","pol.1","fin.1","fin.2",
@@ -76,26 +76,26 @@ ESPN_LIGAS = [
     "uefa.champions","uefa.europa","uefa.europa.conf",
     "uefa.nations","uefa.wchampions",
     # América do Sul
-    "bra.1","bra.2","bra.3","bra.4",
-    "arg.1","arg.2","arg.3","arg.4","arg.5","col.1","col.2","chi.1","chi.2",
+    "bra.1","bra.2","bra.3","bra.4","bra.copa_do_brazil","bra.camp.carioca","bra.camp.paulista","bra.camp.gaucho","bra.camp.mineiro",
+    "arg.1","arg.2","arg.3","arg.4","arg.5","arg.copa","col.1","col.2","col.copa","chi.1","chi.2","chi.copa_chi",
     "uru.1","uru.2","ecu.1","ecu.2","bol.1",
     "per.1","per.2","ven.1","ven.2","par.1","par.2",
     "conmebol.libertadores","conmebol.sudamericana","conmebol.recopa",
     # América do Norte/Central/Caribe
-    "usa.1","usa.2","usa.usl.l1","usa.nwsl","usa.open",
-    "mex.1","mex.2","jam.1","slv.1",
-    "concacaf.champions","concacaf.gold","concacaf.nations.league",
+    "usa.1","usa.2","usa.usl.l1","usa.usl.1","usa.nwsl","usa.open",
+    "mex.1","mex.2","jam.1","slv.1","crc.1","hon.1","gua.1",
+    "concacaf.champions","concacaf.gold","concacaf.nations.league","concacaf.leagues.cup","concacaf.champions_cup",
     # Ásia
     "jpn.1","kor.1","chn.1","ind.1","ind.2",
     "tha.1","mys.1","idn.1","sgp.1",
-    "afc.champions","afc.cup",
+    "afc.champions","afc.cup","afc.asian.cup",
     # África
     "rsa.1","rsa.2","egy.1","gha.1","ken.1","uga.1","zim.1","zam.1",
     "caf.confederation","caf.champions",
     # Oceania
     "aus.1",
     # Mundial / Eliminatórias
-    "fifa.world","fifa.cwc","fifa.olympics","fifa.confederations",
+    "fifa.world","fifa.cwc","fifa.olympics","fifa.confederations","fifa.world.u20","fifa.world.u17","fifa.wwc","fifa.friendly",
     "fifa.worldq.uefa","fifa.worldq.conmebol","fifa.worldq.concacaf",
     "fifa.worldq.afc","fifa.worldq.caf","fifa.worldq.ofc",
 ]
