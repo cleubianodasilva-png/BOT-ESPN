@@ -1083,9 +1083,22 @@ def run():
             if not stats:
                 stats = get_stats_apifootball(fid)
 
+        # Verifica se tem dados reais — sem stats E sem odds, pula o jogo
+        tem_stats = stats and (
+            stats.get("chutes_tot_h", 0) > 0 or
+            stats.get("chutes_tot_a", 0) > 0 or
+            stats.get("escanteios_h", -1) >= 0 or
+            stats.get("escanteios_a", -1) >= 0
+        )
+
         # Determinar favorito pelas odds
         fav_final = get_favorito_odds(h, a)
         fav_por_odds = fav_final in ("h", "a")
+
+        # Se não tem odds NEM estatísticas, pula — evita sinais com dados fictícios
+        if not fav_por_odds and not tem_stats:
+            print(f"[SKIP] {h} x {a} — sem odds e sem estatísticas, pulando")
+            continue
 
         if not fav_por_odds:
             # Fallback 1: maior volume de chutes
