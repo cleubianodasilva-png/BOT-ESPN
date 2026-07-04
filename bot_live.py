@@ -77,7 +77,7 @@ ESPN_LIGAS = [
     "uefa.nations","uefa.wchampions",
     # América do Sul
     "bra.1","bra.2","bra.3","bra.4",
-    "arg.1","arg.2","col.1","col.2","chi.1","chi.2",
+    "arg.1","arg.2","arg.3","col.1","col.2","chi.1","chi.2",
     "uru.1","uru.2","ecu.1","ecu.2","bol.1",
     "per.1","per.2","ven.1","ven.2","par.1","par.2",
     "conmebol.libertadores","conmebol.sudamericana","conmebol.recopa",
@@ -91,7 +91,7 @@ ESPN_LIGAS = [
     "afc.champions","afc.cup",
     # África
     "rsa.1","rsa.2","egy.1","gha.1","ken.1","uga.1","zim.1","zam.1",
-    "caf.confederation",
+    "caf.confederation","caf.champions",
     # Oceania
     "aus.1",
     # Mundial / Eliminatórias
