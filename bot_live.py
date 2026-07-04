@@ -11,7 +11,7 @@ BRT             = timezone(timedelta(hours=-3))
 
 # ─── Credenciais ───────────────────────────────────────────────────────────────
 TELEGRAM_TOKEN  = "8925195607:AAEmgjrY0S6bVx95BGSzgHaNxbDlOarcEx8"
-CHAT_IDS        = ["-1003530439409"]  # BOOT IA INTELIGENTE (Zapia)
+CHAT_IDS        = ["-1003530439409"]
 ODDS_API_KEY    = "74e3ecb93cc2333874cb7038b9f682c0"
 RAPIDAPI_KEY    = "f72be1a7cdmsha226030291845afp131cd7jsn00f5979540aa"
 
@@ -110,28 +110,9 @@ RAPIDAPI_HEADERS = {
 # ═══════════════════════════════════════════════════════════════════════════════
 # TELEGRAM
 # ═══════════════════════════════════════════════════════════════════════════════
-def grupo_ja_tem_sinal(marca):
-    """Verifica nas ultimas msgs do bot se esse sinal ja foi enviado por qualquer bot."""
-    try:
-        url_upd = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/getUpdates"
-        r = requests.get(url_upd, params={"limit": 100, "offset": -100}, timeout=8)
-        updates = r.json().get("result", [])
-        for u in updates:
-            for key in ("channel_post", "message"):
-                txt = u.get(key, {}).get("text", "") or ""
-                if marca in txt:
-                    return True
-    except:
-        pass
-    return False
-
-
 def send_telegram(msg, botoes=True, reply_to=None, marca=None):
     url_send = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
     last_mid = None
-    if marca and grupo_ja_tem_sinal(marca):
-        print(f"[DEDUP] Sinal {marca} ja no grupo — ignorando")
-        return None
     for chat_id in CHAT_IDS:
         payload = {"chat_id": chat_id, "text": msg, "parse_mode": "HTML"}
         if reply_to:
