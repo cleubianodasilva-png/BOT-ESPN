@@ -755,13 +755,12 @@ def run():
         fav_perdendo_1 = (adv_gols - fav_gols) == 1
         # Condição escanteio: fav empatando OU perdendo por no máximo 1 gol
         corner_valido = fav_empatando or fav_perdendo_1
-        # Over Partida FT: fav empatando OU perdendo por 1 gol, total de gols <= 2
-        # Placares válidos: 0x0, 0x1(fav=h), 1x0(fav=a), 1x1
+        # Over 1.5 FT: placares válidos APENAS 1x0 ou 0x1 (fav perdendo por 1, total = 1 gol)
         fav_gols_oft = sh if fav_final == "h" else sa
         adv_gols_oft = sa if fav_final == "h" else sh
         oft_valido = (
-            (fav_empatando or (adv_gols_oft - fav_gols_oft) == 1) and
-            (sh + sa) <= 2
+            (adv_gols_oft - fav_gols_oft) == 1 and
+            (sh + sa) == 1
         )
 
         # MERCADO 1: OVER 0.5 HT (15-27 min, 0x0, favorito empatando, sem vermelho do fav)
