@@ -1153,29 +1153,10 @@ def run():
         fav_final = get_favorito_odds(h, a)
         fav_por_odds = fav_final in ("h", "a")
 
-        # Se não tem odds NEM estatísticas, pula — evita sinais com dados fictícios
-        if not fav_por_odds and not tem_stats:
-            print(f"[SKIP] {h} x {a} — sem odds e sem estatísticas, pulando")
-            continue
-
+        # Sem odds = sem favorito confiável, pula o jogo
         if not fav_por_odds:
-            # Fallback: quem está ganhando no placar é o favorito presumido
-            # Se empate, assume Casa como favorita (convenção padrão)
-            if sh > sa:
-                fav_final = "h"
-                print(f"[FAV-FALLBACK] {h} x {a} — Casa favorita por placar ({sh}x{sa})")
-            elif sa > sh:
-                fav_final = "a"
-                print(f"[FAV-FALLBACK] {h} x {a} — Fora favorita por placar ({sa}x{sh})")
-            else:
-                fav_final = "h"
-                print(f"[FAV-FALLBACK] {h} x {a} — empate, assume Casa como favorita")
-
-        # fav_confirmado = odds OU fallback por estatísticas (chutes/escanteios)
-        fav_confirmado = fav_por_odds or (fav_final in ("h", "a"))
-        if fav_final not in ("h", "a"):
-            # Sem odds e sem fallback — pula escanteio mas continua outros mercados com "h"
-            fav_final = "h"
+            print(f"[SKIP-FAV] {h} x {a} — sem odds, favorito desconhecido, pulando")
+            continue
 
         red_fav = stats.get(f"red_cards_{fav_final}", 0) if stats else 0
 
