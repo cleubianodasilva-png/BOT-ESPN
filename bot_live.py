@@ -1067,6 +1067,8 @@ def check_status_command(total_jogos_live=0, jogos_live=None, jogos_na_janela=No
                            params={"offset": last_id + 1, "timeout": 5}, timeout=10).json()
         if not r.get("ok"): return
         new_last_id = last_id
+        radar_respondido = False
+        relatorio_respondido = False
         for update in r.get("result", []):
             new_last_id = update["update_id"]
             msg     = update.get("message", {})
@@ -1074,9 +1076,10 @@ def check_status_command(total_jogos_live=0, jogos_live=None, jogos_na_janela=No
             chat_id = str(msg.get("chat", {}).get("id", ""))
             if chat_id != str(CHAT_IDS[0]):
                 continue
-            if text == "/relatorio":
+            if text == "/relatorio" and not relatorio_respondido:
                 enviar_relatorio_diario()
-            elif text == "/radar":
+                relatorio_respondido = True
+            elif text == "/radar" and not radar_respondido:
                 jogos_live = jogos_live or []
                 jogos_na_janela = jogos_na_janela or []
                 # Monta lista de jogos na janela
@@ -1118,6 +1121,7 @@ def check_status_command(total_jogos_live=0, jogos_live=None, jogos_na_janela=No
                     f"{sep}"
                 )
                 send_telegram(msg_radar, botoes=False)
+                radar_respondido = True
         if new_last_id > last_id:
             with open(LAST_UPDATE_FILE, 'w') as f: json.dump({"last_id": new_last_id}, f)
     except: pass
