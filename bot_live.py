@@ -829,26 +829,67 @@ def get_stats_apifootball(fid):
     return {}
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# API 3 — THE ODDS API: valida favorito pelas odds
+# API 3 — ODDS: favorito pela menor odd (ESPN moneyline ou The Odds API)
 # ═══════════════════════════════════════════════════════════════════════════════
-def get_favorito_odds(home, away):
+def _moneyline_to_decimal(ml):
+    """Converte moneyline americano para decimal."""
+    try:
+        ml = float(ml)
+        if ml > 0:
+            return round(ml / 100 + 1, 3)
+        else:
+            return round(100 / abs(ml) + 1, 3)
+    except:
+        return 99.0
+
+def get_favorito_odds(home, away, fid=None, league=None):
+    """Retorna 'h' ou 'a' baseado na menor odd. Usa ESPN primeiro, depois Odds API."""
+    # Tenta ESPN (grátis, sem cota)
+    if fid and league:
+        try:
+            url = f"https://site.api.espn.com/apis/site/v2/sports/soccer/{league}/scoreboard"
+            r = requests.get(url, timeout=6)
+            for ev in r.json().get("events", []):
+                comp = ev.get("competitions", [{}])[0]
+                ev_fid = str(comp.get("id", ""))
+                if ev_fid != str(fid):
+                    continue
+                odds_list = comp.get("odds", [])
+                for odd in odds_list:
+                    if not odd:
+                        continue
+                    ml = odd.get("moneyline", {})
+                    if ml:
+                        odd_h = _moneyline_to_decimal(ml.get("home", {}).get("close", {}).get("odds", 99))
+                        odd_a = _moneyline_to_decimal(ml.get("away", {}).get("close", {}).get("odds", 99))
+                        if odd_h < 90 and odd_a < 90:
+                            fav = "h" if odd_h <= odd_a else "a"
+                            print(f"[ODDS-ESPN] {home} x {away} | Casa:{odd_h} Fora:{odd_a} → Fav:{fav}")
+                            return fav
+        except Exception as e:
+            print(f"[ODDS-ESPN] Erro: {e}")
+
+    # Fallback: Odds API (quando tiver cota)
     try:
         r = requests.get("https://api.the-odds-api.com/v4/sports/soccer/odds/",
                          params={"apiKey": ODDS_API_KEY, "regions": "eu",
                                  "markets": "h2h", "oddsFormat": "decimal"}, timeout=10)
-        for evento in r.json():
-            nomes = [evento.get("home_team","").lower(), evento.get("away_team","").lower()]
-            if home.lower() in nomes and away.lower() in nomes:
-                for book in evento.get("bookmakers", []):
-                    for mkt in book.get("markets", []):
-                        if mkt["key"] == "h2h":
-                            outcomes = {o["name"].lower(): o["price"] for o in mkt["outcomes"]}
-                            odd_h = outcomes.get(home.lower(), 99)
-                            odd_a = outcomes.get(away.lower(), 99)
-                            return "h" if odd_h <= odd_a else "a"
-        return None
+        if r.status_code == 200:
+            for evento in r.json():
+                nomes = [evento.get("home_team","").lower(), evento.get("away_team","").lower()]
+                if home.lower() in nomes and away.lower() in nomes:
+                    for book in evento.get("bookmakers", []):
+                        for mkt in book.get("markets", []):
+                            if mkt["key"] == "h2h":
+                                outcomes = {o["name"].lower(): o["price"] for o in mkt["outcomes"]}
+                                odd_h = outcomes.get(home.lower(), 99)
+                                odd_a = outcomes.get(away.lower(), 99)
+                                fav = "h" if odd_h <= odd_a else "a"
+                                print(f"[ODDS-API] {home} x {away} | Casa:{odd_h} Fora:{odd_a} → Fav:{fav}")
+                                return fav
     except:
-        return None
+        pass
+    return None
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # FILTRO DE JANELAS
@@ -1193,8 +1234,8 @@ def run():
             stats.get("escanteios_a", -1) >= 0
         )
 
-        # Determinar favorito pelas odds
-        fav_final = get_favorito_odds(h, a)
+        # Determinar favorito pelas odds (ESPN primeiro, depois Odds API)
+        fav_final = get_favorito_odds(h, a, fid=fid, league=j.get("liga", ""))
         fav_por_odds = fav_final in ("h", "a")
 
         # Sem odds = sem favorito confiável, pula o jogo
