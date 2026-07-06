@@ -1112,8 +1112,17 @@ def checar_resultado(sinal):
 # COMANDOS TELEGRAM (/relatorio e /radar)
 # ═══════════════════════════════════════════════════════════════════════════════
 def check_status_command(total_jogos_live=0, jogos_live=None, jogos_na_janela=None):
+    import base64 as _b64
     last_id = 0
-    if os.path.exists(LAST_UPDATE_FILE):
+    # Lê last_update do GitHub para persistir entre execuções
+    if GITHUB_TOKEN and GITHUB_REPO:
+        try:
+            url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/last_update.json"
+            r = requests.get(url, headers=_github_headers(), timeout=6)
+            if r.status_code == 200:
+                last_id = json.loads(_b64.b64decode(r.json()["content"]).decode()).get("last_id", 0)
+        except: pass
+    elif os.path.exists(LAST_UPDATE_FILE):
         try:
             with open(LAST_UPDATE_FILE, 'r') as f: last_id = json.load(f).get("last_id", 0)
         except: pass
@@ -1132,10 +1141,10 @@ def check_status_command(total_jogos_live=0, jogos_live=None, jogos_na_janela=No
             text    = msg.get("text", "")
             chat_id = str(msg.get("chat", {}).get("id", ""))
             msg_ts  = msg.get("date", 0)
-            # Ignora comandos com mais de 6 minutos (evita processar acúmulo antigo)
-            if agora_ts - msg_ts > 360:
+            # Ignora comandos com mais de 30 minutos (evita processar acúmulo muito antigo)
+            if agora_ts - msg_ts > 1800:
                 continue
-            if chat_id != str(CHAT_IDS[0]):
+            if chat_id not in [str(c) for c in CHAT_IDS]:
                 continue
             if text == "/relatorio" and not relatorio_respondido:
                 enviar_relatorio_diario()
@@ -1185,6 +1194,18 @@ def check_status_command(total_jogos_live=0, jogos_live=None, jogos_na_janela=No
                 radar_respondido = True
         if new_last_id > last_id:
             with open(LAST_UPDATE_FILE, 'w') as f: json.dump({"last_id": new_last_id}, f)
+            # Salva no GitHub para persistir entre execuções
+            if GITHUB_TOKEN and GITHUB_REPO:
+                try:
+                    import base64 as _b64
+                    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/last_update.json"
+                    r_get = requests.get(url, headers=_github_headers(), timeout=6)
+                    sha = r_get.json().get("sha", "") if r_get.status_code == 200 else ""
+                    content_b64 = _b64.b64encode(json.dumps({"last_id": new_last_id}).encode()).decode()
+                    payload = {"message": "state: last_update [skip ci]", "content": content_b64}
+                    if sha: payload["sha"] = sha
+                    requests.put(url, headers=_github_headers(), json=payload, timeout=8)
+                except: pass
     except: pass
 
 # ═══════════════════════════════════════════════════════════════════════════════
