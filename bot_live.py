@@ -47,6 +47,7 @@ LIGA_NOMES = {
     "conmebol.libertadores": "Copa Libertadores",
     "conmebol.sudamericana": "Copa Sudamericana",
     "usa.1": "MLS", "usa.2": "USL Championship", "usa.usl.l1": "USL League One",
+    "usa.usl.l2": "USL League Two", "usa.mlsnextpro": "MLS Next Pro",
     "mex.1": "Liga MX", "mex.2": "Liga de Expansión MX",
     "concacaf.champions": "CONCACAF Champions Cup",
     "jpn.1": "J1 League", "kor.1": "K League 1",
@@ -279,6 +280,8 @@ ESPN_LIGAS = [
     "usa.usl.1",
     "usa.usl.l1",
     "usa.usl.l1.cup",
+    "usa.usl.l2",
+    "usa.mlsnextpro",
     "usa.w.usl.1",
     "ven.1",
 ]
