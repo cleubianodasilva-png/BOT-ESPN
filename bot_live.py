@@ -553,6 +553,12 @@ def _fetch_liga(liga_slug):
                     minuto = int(float(clock) // 60) if clock else 0
 
                 if state == "post":
+                    # Ignora jogos adiados, cancelados ou suspensos
+                    short_detail = comp.get("status", {}).get("type", {}).get("shortDetail", "").lower()
+                    type_name    = comp.get("status", {}).get("type", {}).get("name", "").lower()
+                    if any(x in short_detail or x in type_name for x in
+                           ["postponed", "canceled", "cancelled", "suspended", "abandoned", "postp"]):
+                        continue
                     date_str = e.get("date", "")
                     if date_str:
                         try:
@@ -560,7 +566,8 @@ def _fetch_liga(liga_slug):
                             dt_jogo = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
                             agora   = datetime.now(_tz.utc)
                             diff    = (agora - dt_jogo).total_seconds()
-                            if diff <= (90 + 15) * 60:
+                            # diff deve ser positivo (jogo no passado) e dentro do tempo
+                            if 0 <= diff <= (90 + 15) * 60:
                                 minuto = 85
                                 state  = "in"
                             else:
