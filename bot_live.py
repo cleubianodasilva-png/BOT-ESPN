@@ -1442,7 +1442,7 @@ def run():
                     registrar_sinal(fid, "OVERGOAL", h, a, mid)
 
         # MERCADO 5: ESCANTEIO LIMITE HT (30-38 min, fav confirmado, empatando ou perdendo por 1, sem vermelho)
-        if p == 1 and 30 <= m <= 38 and fav_confirmado and corner_valido and red_fav == 0:
+        if p == 1 and 30 <= m <= 38 and fav_por_odds and corner_valido and red_fav == 0:
             hoje = datetime.now(BRT).strftime('%Y%m%d')
             key = f"{fid}_cht_{hoje}"
             cantos_h = stats.get("escanteios_h", 0) if stats else 0
@@ -1455,7 +1455,7 @@ def run():
                     registrar_sinal(fid, "CORNER_HT", h, a, mid, extra_val=cantos)
 
         # MERCADO 6: ESCANTEIO LIMITE FT (80-88 min, fav confirmado, empatando ou perdendo por 1, sem vermelho)
-        if p == 2 and 80 <= m <= 88 and fav_confirmado and corner_valido and red_fav == 0:
+        if p == 2 and 80 <= m <= 88 and fav_por_odds and corner_valido and red_fav == 0:
             hoje = datetime.now(BRT).strftime('%Y%m%d')
             key = f"{fid}_cft_{hoje}"
             cantos_h = stats.get("escanteios_h", 0) if stats else 0
