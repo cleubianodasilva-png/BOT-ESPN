@@ -1006,7 +1006,13 @@ def calcular_prob_gols_ht(chutes_tot, chutes_gol, minuto):
 def filtrar_janelas(jogos):
     resultado = []
     for j in jogos:
-        m, p = j["minuto"], j["period"]
+        m = j["minuto"]
+        p_raw = j["period"]
+        if isinstance(p_raw, str):
+            p = 2 if '2' in p_raw else 1
+        else:
+            p = p_raw
+            
         em_janela = (
             (p == 1 and 15 <= m <= 27) or
             (p == 1 and 30 <= m <= 38) or
