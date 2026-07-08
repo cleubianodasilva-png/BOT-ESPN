@@ -821,7 +821,7 @@ def _moneyline_to_decimal(ml):
         return 99.0
 
 def get_favorito_odds(home, away, fid=None, league=None):
-    """Retorna 'h' ou 'a' baseado na menor odd. Usa ESPN primeiro, depois Odds API."""
+    """Retorna 'h' ou 'a' baseado na menor odd. Usa ESPN, Bzzoiro e API-Football."""
     # Tenta ESPN (grátis, sem cota)
     if fid and league:
         try:
@@ -853,6 +853,27 @@ def get_favorito_odds(home, away, fid=None, league=None):
                             return fav
         except Exception as e:
             print(f"[ODDS-ESPN] Erro: {e}")
+    # Fallback Bzzoiro Odds
+    if fid and str(fid).startswith("bzz_"):
+        try:
+            fid_raw = str(fid).replace("bzz_", "")
+            headers = {"Authorization": "Token " + BZZOIRO_TOKEN}
+            r = requests.get(f"{BZZOIRO_URL}/api/v2/events/{fid_raw}/odds/pre-live/", headers=headers, timeout=8)
+            if r.status_code == 200:
+                data = r.json()
+                # Procura mercado 1x2 (H2H)
+                for mkt in data.get("odds", []):
+                    if mkt.get("name") in ("1x2", "Full Time Result"):
+                        choices = {c.get("name"): float(c.get("value", 99)) for c in mkt.get("choices", [])}
+                        odd_h = choices.get("1", 99)
+                        odd_a = choices.get("2", 99)
+                        if odd_h < 90 and odd_a < 90:
+                            fav = "h" if odd_h <= odd_a else "a"
+                            print(f"[ODDS-BZZ] {home} x {away} | Casa:{odd_h} Fora:{odd_a} → Fav:{fav}")
+                            return fav
+        except:
+            pass
+    
 
     # Fallback 2: APIfootball.com odds (quando fid for do apifootball)
     if fid and str(fid).replace("apfc_","").isdigit():
@@ -902,7 +923,7 @@ def get_favorito_odds(home, away, fid=None, league=None):
 # FILTRO DE JANELAS
 # ═══════════════════════════════════════════════════════════════════════════════
 def get_odd_favorito_num(home, away, fid=None, league=None):
-    """Retorna a odd decimal do favorito (numero). Usa ESPN primeiro, depois Odds API."""
+    """Retorna a odd decimal do favorito (numero). Usa ESPN, Bzzoiro e API-Football."""
     if fid and league:
         try:
             url = f"https://site.api.espn.com/apis/site/v2/sports/soccer/{league}/scoreboard"
