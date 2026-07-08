@@ -22,10 +22,12 @@ def send_examples():
     
     mercados = [
         ("⛳️🔥<b>ESCANTEIO LIMITE HT</b>🔥⛳️", "Mais de 8.5 Cantos", "8", "5/6"),
+        ("⛳️🔥<b>ESCANTEIO LIMITE FT</b>🔥⛳️", "Mais de 12.5 Cantos", "12", "5/6"),
         ("⚽️🔥<b>OVER GOL INTERVALO</b>🔥⚽️", "Mais de 0.5 Gols HT", "-", "4/6"),
-        ("⚽️🔥<b>OVER GOL PARTIDA</b>🔥⚽️", "Mais de 2.5 Gols FT", "-", "5/6"),
+        ("⚽️🔥<b>OVER GOL PARTIDA</b>🔥⚽️", "Mais de 1.5 Gols FT", "-", "5/6"),
+        ("⚽️🔥<b>OVER GOL PARTIDA (FT)</b>🔥⚽️", "Mais de 2.5 Gols FT", "-", "5/6"),
         ("⚽️🔥<b>AMBAS MARCAM</b>🔥⚽️", "Sim (Ambas Marcam)", "-", "6/6"),
-        ("⛳️🔥<b>ESCANTEIO LIMITE FT</b>🔥⛳️", "Mais de 12.5 Cantos", "12", "5/6")
+        ("⚽️🔥<b>+1.5 FT / BTTS</b>🔥⚽️", "Sim (Ambas Marcam + 1.5 FT)", "-", "6/6")
     ]
     
     for titulo, entrada, cantos, crit in mercados:
