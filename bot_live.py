@@ -510,15 +510,23 @@ def enviar_relatorio_diario():
     total = greens + reds
     taxa  = (greens / total * 100) if total > 0 else 0
     msg = (
-        f"{sep}\n📊 <b>━━━━━━━━━━━━━━━━━━━━
-📊 RELATÓRIO DIÁRIO — {data}
-━━━━━━━━━━━━━━━━━━━━
-✅ GREEN: {greens}
-🔴 RED: {reds}
-📈 TOTAL DE ENTRADAS: {total}
-🎯 ASSERTIVIDADE: {taxa}%
-━━━━━━━━━━━━━━━━━━━━
-⚠️👆Resultados do dia👆⚠️    if send_telegram(msg, botoes=False):
+        f"{sep}
+📊 <b>RELATÓRIO DIÁRIO — {hoje}</b>
+{sep}
+"
+        f"✅ GREEN: <b>{greens}</b>
+"
+        f"🔴 RED: <b>{reds}</b>
+"
+        f"📈 TOTAL DE ENTRADAS: <b>{total}</b>
+"
+        f"🎯 ASSERTIVIDADE: <b>{taxa:.1f}%</b>
+"
+        f"{sep}
+"
+        f"⚠️👆 <b>Resultados do dia</b> 👆⚠️"
+    )
+    if send_telegram(msg, botoes=False):
         sent_ctrl.add(hoje_key)
         save_sent(sent_ctrl)
         print(f"[Relatório] Enviado e registrado ({hoje_key})")
@@ -1198,36 +1206,33 @@ def check_status_command(total_jogos_live=0, jogos_live=None, jogos_na_janela=No
                 jogos_na_janela = jogos_na_janela or []
                 # Monta lista de jogos na janela
                 if jogos_na_janela:
-                    linhas_janela = ""
-                    for j in jogos_na_janela:
-                        h = j.get("home", "")
-                        a = j.get("away", "")
-                        m = j.get("minuto", 0)
-                        sh = j.get("sh", 0)
-                        sa = j.get("sa", 0)
-                        liga = j.get("liga", "")
-                        linhas_janela += f"🎯 <b>{h} x {a}</b> | {m}' | {sh}x{sa} | {liga}\n"
-                else:
-                    linhas_janela = "Nenhum jogo na janela no momento.\n"
-                # Monta lista de jogos ao vivo fora da janela (até 10)
-                fora_janela = [j for j in jogos_live if j not in jogos_na_janela]
-                if fora_janela:
-                    linhas_fora = ""
-                    for j in fora_janela[:10]:
-                        h = j.get("home", "")
-                        a = j.get("away", "")
-                        m = j.get("minuto", 0)
-                        sh = j.get("sh", 0)
-                        sa = j.get("sa", 0)
-                        linhas_fora += f"⏳ {h} x {a} | {m}' | {sh}x{sa}\n"
-                    if len(fora_janela) > 10:
-                        linhas_fora += f"... e mais {len(fora_janela)-10} jogos\n"
-                else:
-                    linhas_fora = "—\n"
+                    linhas_janela = "
+".join([f"⚽️ {j['home']} x {j['away']} ({j['minuto']}')" for j in jogos_na_janela]) or "—
+"
+                linhas_fora = "
+".join([f"⚪️ {j['home']} x {j['away']} ({j['minuto']}')" for j in (jogos_live if jogos_live else []) if j not in jogos_na_janela]) or "—
+"
                 msg_radar = (
-                    f"{sep}\n📡 <b>RADAR AO VIVO</b> 📡\n{sep}\n"
-                    f"🔴 <b>{total_jogos_live} jogos ao vivo</b>\n"
-                    f"🎯 <b>{len(jogos_na_janela)} na janela alvo</b>\n"
+                    f"{sep}
+📡 <b>RADAR AO VIVO</b> 📡
+{sep}
+"
+                    f"🔴 <b>{total_jogos_live} jogos ao vivo</b>
+"
+                    f"🎯 <b>{len(jogos_na_janela)} na janela alvo</b>
+"
+                    f"{sep}
+"
+                    f"<b>🎯 NA JANELA:</b>
+{linhas_janela}
+"
+                    f"{sep}
+"
+                    f"<b>⏳ FORA DA JANELA:</b>
+{linhas_fora}
+"
+                    f"{sep}"
+                )} na janela alvo</b>\n"
                     f"{sep}\n"
                     f"<b>🎯 NA JANELA:</b>\n{linhas_janela}"
                     f"{sep}\n"
