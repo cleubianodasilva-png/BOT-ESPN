@@ -1,4 +1,23 @@
 
+def obter_nome_liga(game, fonte):
+    # apifootball: game['league']['name']
+    # Bzzoiro: game['league_name']
+    # ESPN: game['league']
+    liga = "Liga Não Identificada"
+    
+    if fonte == "apifootball":
+        liga = game.get('league', {}).get('name', "Liga Não Identificada")
+    elif fonte == "bzzoiro":
+        liga = game.get('league_name', "Liga Não Identificada")
+    elif fonte == "espn":
+        liga = game.get('league', "Liga Não Identificada")
+    
+    # Se ainda estiver vazio, busca em campos genéricos que as APIs costumam usar
+    if liga == "Liga Não Identificada":
+        liga = game.get('league_name') or game.get('competition_name') or game.get('league') or "Liga Não Identificada"
+        
+    return liga
+\n
 # ═══════════════════════════════════════════════════════════════════════════════
 # BOT MÁQUINA DE GREENS / ZAPIA - VERSÃO ELITE 100% AUTOMÁTICA
 # FONTES: ESPN PÚBLICA + BZZOIRO (TOKEN ATIVO) + APIFOOTBALL (V3 ATIVA)
