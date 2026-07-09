@@ -92,29 +92,35 @@ def gerar_layout_radar(jogos_ao_vivo, jogos_na_janela):
     )
     return corpo
 \nimport requests\n
-def processar_comandos_pendentes(token, chat_id):
-    print(f"[DEBUG] Iniciando busca de comandos no chat {chat_id}...")
 
-    import time
-    url = f"https://api.telegram.org/bot{token}/getUpdates"
+def processar_comandos_pendentes(token, chat_id):
+    import requests
+    url_updates = f"https://api.telegram.org/bot{token}/getUpdates?offset=-5"
     try:
-        updates = requests.get(url).json()
-        if not updates.get("ok"): return
-        
-        agora = time.time()
-        for update in updates.get("result", []):
-            msg = update.get("message", {})
-            text = msg.get("text", "")
-            msg_date = msg.get("date", 0)
-            
-            # Só responder se a mensagem for recente (últimos 10 minutos)
-            if agora - msg_date > 600: continue
-            
-            if text.startswith("/radar"):
-                # Aqui o bot enviaria o que está monitorando agora
-                resposta = "🛰 <b>Radar Máquina de Greens</b>\n\nMonitorando 12 jogos ao vivo.\nNenhum sinal no critério elite no momento.\nAguarde a próxima varredura!"
-                requests.post(f"https://api.telegram.org/bot{token}/sendMessage", 
-                             json={"chat_id": chat_id, "text": resposta, "parse_mode": "HTML"})
+        r = requests.get(url_updates, timeout=10).json()
+        if r.get("ok"):
+            for update in r.get("result", []):
+                msg = update.get("message", {})
+                text = msg.get("text", "")
+                # Se o comando estiver em QUALQUER lugar da mensagem
+                if "/radar" in text:
+                    # Chamar gerar_layout_radar com dados reais se possível, ou fixo para teste
+                    msg_radar = "━━━━━━━━━━━━━━━━━━━━
+📡 RADAR AO VIVO 📡
+━━━━━━━━━━━━━━━━━━━━
+🔴 Verificando jogos...
+━━━━━━━━━━━━━━━━━━━━"
+                    requests.post(f"https://api.telegram.org/bot{token}/sendMessage", json={"chat_id": chat_id, "text": msg_radar, "parse_mode": "HTML"})
+                elif "/relatorio" in text:
+                    msg_rel = "━━━━━━━━━━━━━━━━━━━━
+📊 RELATÓRIO DIÁRIO
+━━━━━━━━━━━━━━━━━━━━
+✅ Processando dados...
+━━━━━━━━━━━━━━━━━━━━"
+                    requests.post(f"https://api.telegram.org/bot{token}/sendMessage", json={"chat_id": chat_id, "text": msg_rel, "parse_mode": "HTML"})
+    except:
+        pass
+
             
             elif text.startswith("/relatorio"):
                 # Relatório simplificado de Green/Red do dia
