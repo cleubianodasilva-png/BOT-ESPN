@@ -463,8 +463,8 @@ def send_telegram(msg, botoes=True, reply_to=None, marca=None, home="", away="")
             bet365_url   = "https://www.bet365.bet.br/#/AZ/"
             paripesa_url = "https://paripesa.com/pt/live"
             payload["reply_markup"] = json.dumps({"inline_keyboard": [[
-                {"text": "🟣 BET365",   "url": bet365_url},
-                {"text": "🔵 PARIPESA", "url": paripesa_url}
+                {"text": "🟣BET365🟣",   "url": bet365_url},
+                {"text": "🔵PARIPESA🔵", "url": paripesa_url}
             ]]})
         try:
             r = requests.post(url_send, json=payload, timeout=10)
@@ -1565,50 +1565,46 @@ def gerar_motivo(mercado, stats, sh, sa, fav_final, cantos_atual=0):
     return f"Jogo equilibrado, ambas criando chances — {chutes_h} chutes de Casa x {chutes_a} de Fora{posse_txt}{vermelho}"
 
 def msg_universal(home, away, minuto, liga, n, mercado, entrada, placar, extra_val=None, cantos_atual=0, stats=None, sh=0, sa=0, fav_final="h"):
-    sep = "━━━━━━━━━━━━━━━━━━━━"
+    sep    = "━━━━━━━━━━━━━━━━━━━━"
+    motivo = gerar_motivo(mercado, stats, sh, sa, fav_final, cantos_atual)
     if "CORNER" in mercado:
-        linha = cantos_atual + 0.5
-        entrada = f"Mais de {linha}\u26f3\ufe0f"
+        linha  = cantos_atual + 0.5
+        entrada = f"Mais de {linha} Cantos"
     titles = {
-        "HT"       : "⚽️🔥OVER GOL INTERVALO🔥⚽️",
-        "BTTS"     : "⚽️🔥AMBAS MARCAM🔥⚽️",
-        "OFT"      : "⚽️🔥OVER 1.5 GOLS PARTIDA🔥⚽️",
-        "OVERGOAL" : "⚽️🔥OVER GOL PARTIDA🔥⚽️",
-        "LIMITEHT" : "⚽️🔥OVER GOL LIMITE HT🔥⚽️",
-        "CORNER_HT": "⛳️🔥ESCANTEIO LIMITE HT🔥⛳️",
-        "CORNER_FT": "⛳️🔥ESCANTEIO LIMITE FT🔥⛳️",
+        "HT"       : "⚽️🔥<b>OVER GOL INTERVALO</b>🔥⚽️",
+        "BTTS"     : "⚽️🔥<b>AMBAS MARCAM</b>🔥⚽️",
+        "OFT"      : "⚽️🔥<b>OVER 1.5 GOLS PARTIDA</b>🔥⚽️",
+        "OVERGOAL" : "⚽️🔥<b>OVER GOL PARTIDA</b>🔥⚽️",
+        "LIMITEHT" : "⚽️🔥<b>OVER GOL LIMITE HT</b>🔥⚽️",
+        "CORNER_HT": "⛳️🔥<b>ESCANTEIO LIMITE HT</b>🔥⛳️",
+        "CORNER_FT": "⛳️🔥<b>ESCANTEIO LIMITE FT</b>🔥⛳️",
     }
-    title = titles.get(mercado, "⚽️🔥{mercado}🔥⚽️")
-    chutes_h = stats.get("chutes_tot_h", 0) if stats else 0
-    chutes_a = stats.get("chutes_tot_a", 0) if stats else 0
-    alvo_h   = stats.get("chutes_gol_h", 0) if stats else 0
-    alvo_a   = stats.get("chutes_gol_a", 0) if stats else 0
-    cant_h   = stats.get("escanteios_h", 0) if stats else 0
-    cant_a   = stats.get("escanteios_a", 0) if stats else 0
+    title = titles.get(mercado, f"⚽️🔥<b>{mercado}</b>🔥⚽️")
+
+    if "CORNER" in mercado:
+        return (
+            f"{sep}{title}⚽️ Placar: {placar}🌏 Liga: {liga}"
+            f"📡 <b>{home}</b> x <b>{away}</b>⏰️ Minuto: <b>{minuto}'</b>{sep}"
+            f"📊 <b>Análise ao Vivo da Entrada:</b>📝 {motivo}"
+            f"💰 Odd Mínima Recomendada: 1.70{sep}"
+            f"⛳️ Escanteios Atuais: <b>{cantos_atual}</b>"
+            f"📌 Entrada: <b>{entrada}</b>"
+            f"✅ Critérios: <b>{n}/6</b>{sep}"
+            f"⚠️Jogue com responsabilidade⚠️"
+        )
     return (
-        f"{sep}\n"
-        f"{title}\n"
-        f"\u26bd\ufe0f Placar: <b>{placar}</b>\n"
-        f"\U0001f30f Liga: <b>{liga}</b>\n"
-        f"\U0001f4e1 <b>{home}</b> x <b>{away}</b>\n"
-        f"\U0001f440 ODDs: Casa 2.10 / Fora 3.40\n"
-        f"\u23f0 Minuto: <b>{minuto}'</b>\n"
-        f"{sep}\n"
-        f"\U0001f4ca Estat\u00edsticas ao Vivo:\n"
-        f"\U0001f680 Chutes: {chutes_h} | {chutes_a}\n"
-        f"\U0001f3af No Alvo: {alvo_h} | {alvo_a}\n"
-        f"\u26f3\ufe0f Cantos: {cant_h} | {cant_a}\n"
-        f"{sep}\n"
-        f"\U0001f4a1 An\u00e1lise T\u00e9cnica da Partida:\n"
-        f"\u2705 Crit\u00e9rios: <b>{n}/6</b>\n"
-        f"\U0001f525 Press\u00e3o: Alta\n"
-        f"\u26a0\ufe0f Alerta: Fim de Jogo / Press\u00e3o Total\n"
-        f"\U0001f4b0 Odd M\u00ednima Recomendada: 1.70\n"
-        f"{sep}\n"
-        f"\U0001f4cc Entrada: <b>{entrada}</b>\n"
-        f"{sep}\n"
-        f"\u26a0\ufe0fJogue com responsabilidade\u26a0\ufe0f"
+        f"{sep}{title}⚽️ Placar: {placar}🌏 Liga: {liga}"
+        f"📡 <b>{home}</b> x <b>{away}</b>⏰️ Minuto: <b>{minuto}'</b>{sep}"
+        f"📊 <b>Análise ao Vivo da Entrada:</b>📝 {motivo}"
+        f"💰 Odd Mínima Recomendada: 1.70{sep}"
+        f"📌 Entrada: <b>{entrada}</b>✅ Critérios: <b>{n}/6</b>{sep}"
+        f"⚠️Jogue com responsabilidade⚠️"
     )
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# VALIDAÇÃO DE RESULTADOS (usa ESPN para checar placar final)
+# ═══════════════════════════════════════════════════════════════════════════════
+
 
 
 def checar_resultado(sinal):
