@@ -1324,6 +1324,7 @@ def run():
         liga = str(j["liga"])
         placar = f"{sh}x{sa}"
         source = j.get("source", "espn")
+        print(f"[DEBUG] Jogo na Janela: {h} x {a} | Minuto: {m} | Placar: {placar}")
 
         
         # BUSCA DE ESTATÍSTICAS PROFUNDAS (Prioridade: apifootball)
@@ -1331,6 +1332,7 @@ def run():
         
         # Fallback para outras fontes caso a Mestre não tenha os detalhes
         if not stats:
+            print(f"[DEBUG-STATS] Falha ao obter estatísticas para {h} x {a}")
             if source == "bzzoiro":
                 stats = get_stats_bzzoiro(j["fid_raw"], h, a)
             else:
@@ -1342,6 +1344,7 @@ def run():
             stats = get_stats_apifootball_v3(fid)
 
         if not stats:
+            print(f"[DEBUG-STATS] Falha ao obter estatísticas para {h} x {a}")
             print(f"[SKIP] {h} x {a} — Sem estatísticas profundas")
             continue
 
@@ -1388,11 +1391,8 @@ def run():
         liga   = str(j["liga"])
         stot   = sh + sa
         placar = f"{sh}x{sa}"
-
-        print(f"[Analisando] {h} x {a} | {placar} | {m}min")
-
-        # Busca stats UMA vez — reutiliza para tudo (fonte depende da origem do jogo)
         source = j.get("source", "espn")
+        print(f"[DEBUG] Jogo na Janela: {h} x {a} | Minuto: {m} | Placar: {placar}")
         if source == "apifootball":
             stats = get_stats_apifootball_live(fid)
         else:
