@@ -311,7 +311,7 @@ RAPIDAPI_HEADERS = {
 
 # URLs Oficiais das APIs (Conforme Documentação)
 BZZOIRO_URL      = "https://sports.bzzoiro.com"
-APIFOOTBALL_URL = "https://apiv3.apifootball.com/"
+APIFOOTBALL_URL  = "https://apiv3.apifootball.com"
 
 # APIs Secundárias (Ativas)
 APIFOOTBALL_COM_KEY = "312c2ecc90136b390d19c765711088d8121b195418b9c2e8006b9e8f7ed8e4ed"
@@ -322,7 +322,7 @@ BZZOIRO_URL     = "https://sports.bzzoiro.com"
 
 # URLs Oficiais das APIs (Conforme Documentação)
 BZZOIRO_URL      = "https://sports.bzzoiro.com"
-APIFOOTBALL_URL = "https://apiv3.apifootball.com/"
+APIFOOTBALL_URL  = "https://apiv3.apifootball.com"
 
 # APIs Secundárias (Ativas)
 APIFOOTBALL_COM_KEY = "312c2ecc90136b390d19c765711088d8121b195418b9c2e8006b9e8f7ed8e4ed"
@@ -333,7 +333,7 @@ BZZOIRO_URL     = "https://sports.bzzoiro.com"
 
 # URLs Oficiais das APIs (Conforme Documentação)
 BZZOIRO_URL      = "https://sports.bzzoiro.com"
-APIFOOTBALL_URL = "https://apiv3.apifootball.com/"
+APIFOOTBALL_URL  = "https://apiv3.apifootball.com"
 
 # APIs Secundárias (Ativas)
 APIFOOTBALL_COM_KEY = "312c2ecc90136b390d19c765711088d8121b195418b9c2e8006b9e8f7ed8e4ed"
@@ -666,7 +666,7 @@ def get_jogos_apifootball(fids_espn):
             r = requests.get(
                 f"{API_FOOTBALL_URL}/fixtures",
                 params={"live": "all"},
-                params={"action": "get_events", "match_live": "1", "APIkey": key},
+                headers={"x-apisports-key": key},
                 timeout=15
             )
             rjson = r.json()
@@ -723,7 +723,7 @@ def get_stats_apifootball_live(fid):
             r = requests.get(
                 f"{API_FOOTBALL_URL}/fixtures",
                 params={"id": fid},
-                params={"action": "get_events", "match_live": "1", "APIkey": key},
+                headers={"x-apisports-key": key},
                 timeout=10
             )
             rjson = r.json()
@@ -736,7 +736,7 @@ def get_stats_apifootball_live(fid):
             r2 = requests.get(
                 f"{API_FOOTBALL_URL}/fixtures/statistics",
                 params={"fixture": fid},
-                params={"action": "get_events", "match_live": "1", "APIkey": key},
+                headers={"x-apisports-key": key},
                 timeout=10
             )
             r2json = r2.json()
@@ -755,7 +755,7 @@ def get_stats_apifootball_live(fid):
                 r3 = requests.get(
                     f"{API_FOOTBALL_URL}/fixtures/events",
                     params={"fixture": fid},
-                    params={"action": "get_events", "match_live": "1", "APIkey": key},
+                    headers={"x-apisports-key": key},
                     timeout=10
                 )
                 events = r3.json().get("response", [])
@@ -1133,7 +1133,7 @@ def get_stats_espn(eid, home, away):
         try:
             r     = requests.get(f"{API_FOOTBALL_URL}/fixtures/statistics",
                                  params={"fixture": fid},
-                                 params={"action": "get_events", "match_live": "1", "APIkey": key}, timeout=10)
+                                 headers={"x-apisports-key": key}, timeout=10)
             rjson = r.json()
             if (r.headers.get("x-ratelimit-requests-remaining") == "0"
                     or (isinstance(rjson.get("errors"), dict) and rjson.get("errors", {}).get("requests"))
@@ -1154,7 +1154,7 @@ def get_stats_espn(eid, home, away):
                     if k == "shots_on_goal": stats[f"chutes_gol_{side}"]  = val
             r2     = requests.get(f"{API_FOOTBALL_URL}/fixtures/events",
                                   params={"fixture": fid},
-                                  params={"action": "get_events", "match_live": "1", "APIkey": key}, timeout=10)
+                                  headers={"x-apisports-key": key}, timeout=10)
             events = r2.json().get("response", [])
             red_h, red_a = 0, 0
             for ev in events:
