@@ -93,43 +93,6 @@ def gerar_layout_radar(jogos_ao_vivo, jogos_na_janela):
     return corpo
 \nimport requests\n
 
-def processar_comandos_pendentes(token, chat_id):
-    import requests
-    url_updates = f"https://api.telegram.org/bot{token}/getUpdates?offset=-5"
-    try:
-        r = requests.get(url_updates, timeout=10).json()
-        if r.get("ok"):
-            for update in r.get("result", []):
-                msg = update.get("message", {})
-                text = msg.get("text", "")
-                # Se o comando estiver em QUALQUER lugar da mensagem
-                if "/radar" in text:
-                    # Chamar gerar_layout_radar com dados reais se possível, ou fixo para teste
-                    msg_radar = "━━━━━━━━━━━━━━━━━━━━
-📡 RADAR AO VIVO 📡
-━━━━━━━━━━━━━━━━━━━━
-🔴 Verificando jogos...
-━━━━━━━━━━━━━━━━━━━━"
-                    requests.post(f"https://api.telegram.org/bot{token}/sendMessage", json={"chat_id": chat_id, "text": msg_radar, "parse_mode": "HTML"})
-                elif "/relatorio" in text:
-                    msg_rel = "━━━━━━━━━━━━━━━━━━━━
-📊 RELATÓRIO DIÁRIO
-━━━━━━━━━━━━━━━━━━━━
-✅ Processando dados...
-━━━━━━━━━━━━━━━━━━━━"
-                    requests.post(f"https://api.telegram.org/bot{token}/sendMessage", json={"chat_id": chat_id, "text": msg_rel, "parse_mode": "HTML"})
-    except:
-        pass
-
-            
-            elif text.startswith("/relatorio"):
-                # Relatório simplificado de Green/Red do dia
-                resposta = "📊 <b>Relatório do Dia</b>\n\n✅ Greens: 0\n🔴 Reds: 0\n💰 ROI: 0%\n\nAguardando as primeiras entradas do dia!"
-                requests.post(f"https://api.telegram.org/bot{token}/sendMessage", 
-                             json={"chat_id": chat_id, "text": resposta, "parse_mode": "HTML"})
-    except:
-        pass
-\n
 def obter_nome_liga(game, fonte):
     # apifootball: game['league']['name']
     # Bzzoiro: game['league_name']
@@ -2086,6 +2049,26 @@ def run():
         print(f"[SINAIS] Erro validação: {e}")
 
     print(f"Finalizado. Enviados: {total_env}")
+
+
+def processar_comandos_pendentes(token, chat_id):
+    import requests
+    try:
+        r = requests.get(f"https://api.telegram.org/bot{token}/getUpdates?offset=-5", timeout=10).json()
+        if r.get("ok"):
+            for update in r.get("result", []):
+                msg = update.get("message", {})
+                text = msg.get("text", "")
+                if "/radar" in text:
+                    sep = "━━━━━━━━━━━━━━━━━━━━"
+                    msg_radar = f"{sep}\n📡 RADAR AO VIVO 📡\n{sep}\n🔴 Verificando jogos...\n{sep}"
+                    requests.post(f"https://api.telegram.org/bot{token}/sendMessage", json={"chat_id": chat_id, "text": msg_radar, "parse_mode": "HTML"})
+                elif "/relatorio" in text:
+                    sep = "━━━━━━━━━━━━━━━━━━━━"
+                    msg_rel = f"{sep}\n📊 RELATÓRIO DIÁRIO\n{sep}\n✅ Processando dados...\n{sep}"
+                    requests.post(f"https://api.telegram.org/bot{token}/sendMessage", json={"chat_id": chat_id, "text": msg_rel, "parse_mode": "HTML"})
+    except Exception as e:
+        print(f"[ERRO COMANDOS] {e}")
 
 if __name__ == "__main__":\n    processar_comandos_pendentes(TG_TOKEN, CHAT_ID)
     run()
