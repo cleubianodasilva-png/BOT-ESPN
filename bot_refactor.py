@@ -2051,6 +2051,7 @@ def run():
     print(f"Finalizado. Enviados: {total_env}")
 
 
+
 def processar_comandos_pendentes(token, chat_id):
     import requests
     try:
@@ -2059,16 +2060,16 @@ def processar_comandos_pendentes(token, chat_id):
             for update in r.get("result", []):
                 msg = update.get("message", {})
                 text = msg.get("text", "")
+                sep = "━━━━━━━━━━━━━━━━━━━━"
                 if "/radar" in text:
-                    sep = "━━━━━━━━━━━━━━━━━━━━"
-                    msg_radar = f"{sep}\n📡 RADAR AO VIVO 📡\n{sep}\n🔴 Verificando jogos...\n{sep}"
-                    requests.post(f"https://api.telegram.org/bot{token}/sendMessage", json={"chat_id": chat_id, "text": msg_radar, "parse_mode": "HTML"})
+                    msg = f"{sep}\n📡 RADAR AO VIVO 📡\n{sep}\n🔴 Verificando jogos...\n{sep}"
+                    requests.post(f"https://api.telegram.org/bot{token}/sendMessage", json={"chat_id": chat_id, "text": msg, "parse_mode": "HTML"})
                 elif "/relatorio" in text:
-                    sep = "━━━━━━━━━━━━━━━━━━━━"
-                    msg_rel = f"{sep}\n📊 RELATÓRIO DIÁRIO\n{sep}\n✅ Processando dados...\n{sep}"
-                    requests.post(f"https://api.telegram.org/bot{token}/sendMessage", json={"chat_id": chat_id, "text": msg_rel, "parse_mode": "HTML"})
-    except Exception as e:
-        print(f"[ERRO COMANDOS] {e}")
+                    msg = f"{sep}\n📊 RELATÓRIO DIÁRIO\n{sep}\n✅ Processando dados...\n{sep}"
+                    requests.post(f"https://api.telegram.org/bot{token}/sendMessage", json={"chat_id": chat_id, "text": msg, "parse_mode": "HTML"})
+    except:
+        pass
+
 
 if __name__ == "__main__":\n    processar_comandos_pendentes(TG_TOKEN, CHAT_ID)
     run()
