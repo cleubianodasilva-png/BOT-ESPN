@@ -1471,7 +1471,7 @@ def filtrar_janelas(jogos):
             (p == 1 and 12 <= m <= 28) or
             (p == 1 and 29 <= m <= 40) or
             (p == 2 and 58 <= m <= 76) or
-            (p == 2 and 80 <= m <= 88)
+            (p == 2 and 78 <= m <= 89)
         )
         if em_janela:
             resultado.append(j)
