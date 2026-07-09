@@ -16,19 +16,19 @@ BRT             = timezone(timedelta(hours=-3))
 
 # ─── Credenciais ───────────────────────────────────────────────────────────────
 TELEGRAM_TOKEN  = os.environ.get("TG_TOKEN", "")
-CHAT_IDS        = [os.environ.get("TG_GROUP_ID", "")]
+CHAT_IDS        = [os.environ.get("TG_GROUP_ID", "")]  # BOOT IA INTELIGENTE (Zapia)
 ODDS_API_KEY    = "74e3ecb93cc2333874cb7038b9f682c0"
 RAPIDAPI_KEY    = "f72be1a7cdmsha226030291845afp131cd7jsn00f5979540aa"
 
 # apifootball (fallback quando ESPN não tiver o jogo)
-API_FOOTBALL_KEYS = ["312c2ecc90136b390d19c765711088d8121b195418b9c2e8006b9e8f7ed8e4ed", # Chave Mestra Ativa
+API_FOOTBALL_KEYS = [
     "77c645149c00ea5bbcca2c348e8a46c8",   # Chave do irmão (principal)
     "7fa6994f1e4103991a95ad53d2e7cc6b",   # Chave própria (fallback)
 ]
-API_FOOTBALL_URL = "https://apiv3.apifootball.com"
+API_FOOTBALL_URL = "https://v3.football.api-sports.io"
 
 # ESPN (principal — pública, sem chave, sem limite)
-ESPN_SCOREBOARD = "https://site.api.espn.com/apis/site/v2/sports/soccer/all/scoreboard"
+ESPN_SCOREBOARD = "https://site.api.espn.com/apis/site/v2/sports/soccer/{liga}/scoreboard"
 ESPN_SUMMARY    = "https://site.api.espn.com/apis/site/v2/sports/soccer/all/summary"
 
 # Mapeamento de fallback para slugs sem nome retornado pela ESPN
@@ -311,10 +311,10 @@ RAPIDAPI_HEADERS = {
 
 # URLs Oficiais das APIs (Conforme Documentação)
 BZZOIRO_URL      = "https://sports.bzzoiro.com"
-APIFOOTBALL_URL = "https://apiv3.apifootball.com/"
+APIFOOTBALL_URL  = "https://apiv3.apifootball.com"
 
 # APIs Secundárias (Ativas)
-APIFOOTBALL_KEY = "312c2ecc90136b390d19c765711088d8121b195418b9c2e8006b9e8f7ed8e4ed"
+APIFOOTBALL_COM_KEY = "312c2ecc90136b390d19c765711088d8121b195418b9c2e8006b9e8f7ed8e4ed"
 BZZOIRO_TOKEN   = "0c594407931777d114db6c3ccaefea54fa10c0ef"
 BZZOIRO_URL     = "https://sports.bzzoiro.com"
 
@@ -322,10 +322,10 @@ BZZOIRO_URL     = "https://sports.bzzoiro.com"
 
 # URLs Oficiais das APIs (Conforme Documentação)
 BZZOIRO_URL      = "https://sports.bzzoiro.com"
-APIFOOTBALL_URL = "https://apiv3.apifootball.com/"
+APIFOOTBALL_URL  = "https://apiv3.apifootball.com"
 
 # APIs Secundárias (Ativas)
-APIFOOTBALL_KEY = "312c2ecc90136b390d19c765711088d8121b195418b9c2e8006b9e8f7ed8e4ed"
+APIFOOTBALL_COM_KEY = "312c2ecc90136b390d19c765711088d8121b195418b9c2e8006b9e8f7ed8e4ed"
 BZZOIRO_TOKEN   = "0c594407931777d114db6c3ccaefea54fa10c0ef"
 BZZOIRO_URL     = "https://sports.bzzoiro.com"
 
@@ -333,10 +333,10 @@ BZZOIRO_URL     = "https://sports.bzzoiro.com"
 
 # URLs Oficiais das APIs (Conforme Documentação)
 BZZOIRO_URL      = "https://sports.bzzoiro.com"
-APIFOOTBALL_URL = "https://apiv3.apifootball.com/"
+APIFOOTBALL_URL  = "https://apiv3.apifootball.com"
 
 # APIs Secundárias (Ativas)
-APIFOOTBALL_KEY = "312c2ecc90136b390d19c765711088d8121b195418b9c2e8006b9e8f7ed8e4ed"
+APIFOOTBALL_COM_KEY = "312c2ecc90136b390d19c765711088d8121b195418b9c2e8006b9e8f7ed8e4ed"
 BZZOIRO_TOKEN   = "0c594407931777d114db6c3ccaefea54fa10c0ef"
 BZZOIRO_URL     = "https://sports.bzzoiro.com"
 
@@ -351,14 +351,14 @@ def send_telegram(msg, botoes=True, reply_to=None, marca=None, home="", away="")
         if reply_to:
             payload["reply_to_message_id"] = reply_to
         if botoes:
+            import urllib.parse
+            query = urllib.parse.quote(f"{home} vs {away}") if home and away else ""
             bet365_url   = "https://www.bet365.bet.br/#/AZ/"
             paripesa_url = "https://paripesa.com/pt/live"
-            payload["reply_markup"] = {
-                "inline_keyboard": [[
-                    {"text": "🟣 BET365",   "url": bet365_url},
-                    {"text": "🔵 PARIPESA", "url": paripesa_url}
-                ]]
-            }
+            payload["reply_markup"] = json.dumps({"inline_keyboard": [[
+                {"text": "🟣 BET365",   "url": bet365_url},
+                {"text": "🔵 PARIPESA", "url": paripesa_url}
+            ]]})
         try:
             r = requests.post(url_send, json=payload, timeout=10)
             mid = r.json().get("result", {}).get("message_id")
@@ -641,43 +641,19 @@ def _fetch_liga(liga_slug):
     return resultado
 
 
-
-def get_jogos_espn_global():
-    url = "https://site.api.espn.com/apis/site/v2/sports/soccer/all/scoreboard"
-    try:
-        r = requests.get(url, timeout=15)
-        events = r.json().get("events", [])
-        jogos = []
-        for e in events:
-            comp = e.get("competitions", [{}])[0]
-            status = comp.get("status", {}).get("type", {})
-            if status.get("state") != "in": continue
-            
-            # Extração de dados básica
-            h_team = comp.get("competitors", [{}])[0]
-            a_team = comp.get("competitors", [{}])[1]
-            
-            # Normalização de nomes
-            home_name = h_team.get("team", {}).get("displayName", "Home")
-            away_name = a_team.get("team", {}).get("displayName", "Away")
-            
-            jogos.append({
-                "fid": "espn_" + str(e.get("id")),
-                "fid_raw": str(e.get("id")),
-                "home": home_name,
-                "away": away_name,
-                "sh": int(h_team.get("score", 0)),
-                "sa": int(a_team.get("score", 0)),
-                "minuto": int(comp.get("status", {}).get("clock", 0) // 60),
-                "period": comp.get("status", {}).get("period", 1),
-                "liga": e.get("season", {}).get("displayName", "Soccer"),
-                "source": "espn"
-            })
-        return jogos
-    except Exception as e:
-        print(f"[ESPN Global] Erro: {e}")
-        return []
-
+def get_jogos_espn():
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+    jogos  = []
+    vistos = set()
+    with ThreadPoolExecutor(max_workers=20) as executor:
+        futures = {executor.submit(_fetch_liga, slug): slug for slug in ESPN_LIGAS}
+        for future in as_completed(futures):
+            for j in future.result():
+                if j["fid"] not in vistos:
+                    vistos.add(j["fid"])
+                    jogos.append(j)
+    print(f"[ESPN] {len(jogos)} jogos ao vivo ({len(ESPN_LIGAS)} ligas monitoradas)")
+    return jogos
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -813,7 +789,7 @@ def get_stats_apifootball_live(fid):
 def get_jogos_apifootball_v3(fids_existentes):
     try:
         # action=get_events com match_live=1 retorna jogos ao vivo
-        params = {"action": "get_events", "match_live": "1", "APIkey": APIFOOTBALL_KEY}
+        params = {"action": "get_events", "match_live": "1", "APIkey": APIFOOTBALL_COM_KEY}
         r = requests.get(APIFOOTBALL_URL, params=params, timeout=15)
         data = r.json()
         if not isinstance(data, list): return []
@@ -860,86 +836,479 @@ def get_jogos_bzzoiro(fids_existentes):
     except: return []
 
 
+def get_stats_apifootball_v3(match_id):
+    try:
+        params = {"action": "get_statistics", "match_id": match_id, "APIkey": APIFOOTBALL_COM_KEY}
+        r = requests.get(APIFOOTBALL_URL, params=params, timeout=10)
+        data = r.json()
+        if not data or str(match_id) not in data: return {}
+        raw = data[str(match_id)].get("statistics", [])
+        stats = {}
+        for s in raw:
+            tipo = s.get("type", "").lower()
+            h_val = s.get("home", "0").replace("%", "")
+            a_val = s.get("away", "0").replace("%", "")
+            if "corner" in tipo:
+                stats["escanteios_h"], stats["escanteios_a"] = int(h_val), int(a_val)
+            elif "shots on goal" in tipo:
+                stats["chutes_gol_h"], stats["chutes_gol_a"] = int(h_val), int(a_val)
+            elif "shots total" in tipo:
+                stats["chutes_tot_h"], stats["chutes_tot_a"] = int(h_val), int(a_val)
+            elif "red cards" in tipo:
+                stats["red_cards_h"], stats["red_cards_a"] = int(h_val), int(a_val)
+        return stats
+    except: return {}
 
+def get_stats_bzzoiro(fid_raw, home, away):
+    try:
+        headers = {"Authorization": "Token " + BZZOIRO_TOKEN}
+        r = requests.get(f"{BZZOIRO_URL}/api/v2/events/{fid_raw}/stats/", headers=headers, timeout=10)
+        data = r.json()
+        raw_stats = data.get("stats", {})
+        stats = {}
+        for side, key in [("home", "h"), ("away", "a")]:
+            side_data = raw_stats.get(side, {})
+            shots = side_data.get("shots", {})
+            if isinstance(shots, dict):
+                stats[f"chutes_tot_{key}"] = int(shots.get("total", 0) or 0)
+                stats[f"chutes_gol_{key}"] = int(shots.get("on_target", 0) or 0)
+            stats[f"escanteios_{key}"] = int(side_data.get("corners", 0) or 0)
+            cards = side_data.get("cards", {})
+            if isinstance(cards, dict):
+                stats[f"red_cards_{key}"] = int(cards.get("red", 0) or 0)
+        return stats
+    except: return {}
+
+
+
+def get_jogos_apifootball_v3(fids_existentes):
+    try:
+        # action=get_events com match_live=1 retorna jogos ao vivo
+        params = {"action": "get_events", "match_live": "1", "APIkey": APIFOOTBALL_COM_KEY}
+        r = requests.get(APIFOOTBALL_URL, params=params, timeout=15)
+        data = r.json()
+        if not isinstance(data, list): return []
+        jogos = []
+        for ev in data:
+            fid = "apif_" + str(ev.get("match_id", ""))
+            if fid in fids_existentes: continue
+            jogos.append({
+                "fid": fid, "fid_raw": str(ev.get("match_id", "")),
+                "home": ev.get("match_hometeam_name", ""),
+                "away": ev.get("match_awayteam_name", ""),
+                "sh": int(ev.get("match_hometeam_score", 0) or 0),
+                "sa": int(ev.get("match_awayteam_score", 0) or 0),
+                "minuto": int(ev.get("match_status", 0) or 0),
+                "liga": ev.get("league_name", ""),
+                "source": "apifootball"
+            })
+        return jogos
+    except: return []
+
+def get_jogos_bzzoiro(fids_existentes):
+    try:
+        headers = {"Authorization": "Token " + BZZOIRO_TOKEN}
+        r = requests.get(BZZOIRO_URL + "/api/v2/events/live/", headers=headers, timeout=15)
+        data = r.json()
+        results = data.get("results", [])
+        jogos = []
+        for ev in results:
+            fid = "bzz_" + str(ev.get("id", ""))
+            if fid in fids_existentes: continue
+            sh, sa = int(ev.get("home_score") or 0), int(ev.get("away_score") or 0)
+            minuto = ev.get("current_minute") or 0
+            period_raw = ev.get("period", "") or ""
+            period = 1 if "1" in period_raw or minuto <= 45 else 2
+            liga = ev.get("league", {}) or {}
+            liga_nome = liga.get("name", "Desconhecida") if isinstance(liga, dict) else str(liga)
+            jogos.append({
+                "fid": fid, "fid_raw": str(ev.get("id", "")),
+                "home": ev.get("home_team", ""), "away": ev.get("away_team", ""),
+                "sh": sh, "sa": sa, "minuto": minuto,
+                "period": period, "liga": liga_nome, "source": "bzzoiro"
+            })
+        return jogos
+    except: return []
 
 
 def get_stats_apifootball_v3(match_id):
-    """Busca estatísticas detalhadas no endpoint get_statistics (mais confiável)."""
-    if not match_id: return None
-    url = f"https://apiv3.apifootball.com/?action=get_statistics&match_id={match_id}&APIkey={APIFOOTBALL_KEY}"
     try:
-        r = requests.get(url, timeout=10)
+        params = {"action": "get_statistics", "match_id": match_id, "APIkey": APIFOOTBALL_COM_KEY}
+        r = requests.get(APIFOOTBALL_URL, params=params, timeout=10)
         data = r.json()
-        
-        # A apifootball.com v3 pode retornar:
-        # 1. Uma lista de dicionários (um para cada time)
-        # 2. Um dicionário com o match_id como chave (formato antigo)
-        # 3. Um dicionário com erro
-        
-        stats_list = []
-        if isinstance(data, list):
-            stats_list = data
-        elif isinstance(data, dict):
-            if str(match_id) in data:
-                stats_list = data[str(match_id)].get("statistics", [])
-            elif "result" in data:
-                stats_list = data["result"]
-        
-        if not stats_list: return None
-        
-        res = {"escanteios_h": 0, "escanteios_a": 0, "chutes_tot_h": 0, "chutes_tot_a": 0, "chutes_gol_h": 0, "chutes_gol_a": 0, "red_cards_h": 0, "red_cards_a": 0}
-        
-        # Formato de lista de tipos (ex: [{"type": "Corners", "home": "5", "away": "2"}, ...])
-        for s in stats_list:
-            t = str(s.get("type", "")).lower()
-            h = str(s.get("home", "0")).strip() or "0"
-            a = str(s.get("away", "0")).strip() or "0"
-            
-            try:
-                val_h, val_a = int(h), int(a)
-                if "corners" in t: res["escanteios_h"], res["escanteios_a"] = val_h, val_a
-                elif "shots total" in t or "total shots" in t: res["chutes_tot_h"], res["chutes_tot_a"] = val_h, val_a
-                elif "on target" in t: res["chutes_gol_h"], res["chutes_gol_a"] = val_h, val_a
-                elif "red cards" in t: res["red_cards_h"], res["red_cards_a"] = val_h, val_a
-            except: continue
-            
-        return res
-    except: pass
+        if not data or str(match_id) not in data: return {}
+        raw = data[str(match_id)].get("statistics", [])
+        stats = {}
+        for s in raw:
+            tipo = s.get("type", "").lower()
+            h_val = s.get("home", "0").replace("%", "")
+            a_val = s.get("away", "0").replace("%", "")
+            if "corner" in tipo:
+                stats["escanteios_h"], stats["escanteios_a"] = int(h_val), int(a_val)
+            elif "shots on goal" in tipo:
+                stats["chutes_gol_h"], stats["chutes_gol_a"] = int(h_val), int(a_val)
+            elif "shots total" in tipo:
+                stats["chutes_tot_h"], stats["chutes_tot_a"] = int(h_val), int(a_val)
+            elif "red cards" in tipo:
+                stats["red_cards_h"], stats["red_cards_a"] = int(h_val), int(a_val)
+        return stats
+    except: return {}
+
+def get_stats_bzzoiro(fid_raw, home, away):
+    try:
+        headers = {"Authorization": "Token " + BZZOIRO_TOKEN}
+        r = requests.get(f"{BZZOIRO_URL}/api/v2/events/{fid_raw}/stats/", headers=headers, timeout=10)
+        data = r.json()
+        raw_stats = data.get("stats", {})
+        stats = {}
+        for side, key in [("home", "h"), ("away", "a")]:
+            side_data = raw_stats.get(side, {})
+            shots = side_data.get("shots", {})
+            if isinstance(shots, dict):
+                stats[f"chutes_tot_{key}"] = int(shots.get("total", 0) or 0)
+                stats[f"chutes_gol_{key}"] = int(shots.get("on_target", 0) or 0)
+            stats[f"escanteios_{key}"] = int(side_data.get("corners", 0) or 0)
+            cards = side_data.get("cards", {})
+            if isinstance(cards, dict):
+                stats[f"red_cards_{key}"] = int(cards.get("red", 0) or 0)
+        return stats
+    except: return {}
+
+
+
+def get_jogos_apifootball_v3(fids_existentes):
+    try:
+        # action=get_events com match_live=1 retorna jogos ao vivo
+        params = {"action": "get_events", "match_live": "1", "APIkey": APIFOOTBALL_COM_KEY}
+        r = requests.get(APIFOOTBALL_URL, params=params, timeout=15)
+        data = r.json()
+        if not isinstance(data, list): return []
+        jogos = []
+        for ev in data:
+            fid = "apif_" + str(ev.get("match_id", ""))
+            if fid in fids_existentes: continue
+            jogos.append({
+                "fid": fid, "fid_raw": str(ev.get("match_id", "")),
+                "home": ev.get("match_hometeam_name", ""),
+                "away": ev.get("match_awayteam_name", ""),
+                "sh": int(ev.get("match_hometeam_score", 0) or 0),
+                "sa": int(ev.get("match_awayteam_score", 0) or 0),
+                "minuto": int(ev.get("match_status", 0) or 0),
+                "liga": ev.get("league_name", ""),
+                "source": "apifootball"
+            })
+        return jogos
+    except: return []
+
+def get_jogos_bzzoiro(fids_existentes):
+    try:
+        headers = {"Authorization": "Token " + BZZOIRO_TOKEN}
+        r = requests.get(BZZOIRO_URL + "/api/v2/events/live/", headers=headers, timeout=15)
+        data = r.json()
+        results = data.get("results", [])
+        jogos = []
+        for ev in results:
+            fid = "bzz_" + str(ev.get("id", ""))
+            if fid in fids_existentes: continue
+            sh, sa = int(ev.get("home_score") or 0), int(ev.get("away_score") or 0)
+            minuto = ev.get("current_minute") or 0
+            period_raw = ev.get("period", "") or ""
+            period = 1 if "1" in period_raw or minuto <= 45 else 2
+            liga = ev.get("league", {}) or {}
+            liga_nome = liga.get("name", "Desconhecida") if isinstance(liga, dict) else str(liga)
+            jogos.append({
+                "fid": fid, "fid_raw": str(ev.get("id", "")),
+                "home": ev.get("home_team", ""), "away": ev.get("away_team", ""),
+                "sh": sh, "sa": sa, "minuto": minuto,
+                "period": period, "liga": liga_nome, "source": "bzzoiro"
+            })
+        return jogos
+    except: return []
+
+
+def get_stats_apifootball_v3(match_id):
+    try:
+        params = {"action": "get_statistics", "match_id": match_id, "APIkey": APIFOOTBALL_COM_KEY}
+        r = requests.get(APIFOOTBALL_URL, params=params, timeout=10)
+        data = r.json()
+        if not data or str(match_id) not in data: return {}
+        raw = data[str(match_id)].get("statistics", [])
+        stats = {}
+        for s in raw:
+            tipo = s.get("type", "").lower()
+            h_val = s.get("home", "0").replace("%", "")
+            a_val = s.get("away", "0").replace("%", "")
+            if "corner" in tipo:
+                stats["escanteios_h"], stats["escanteios_a"] = int(h_val), int(a_val)
+            elif "shots on goal" in tipo:
+                stats["chutes_gol_h"], stats["chutes_gol_a"] = int(h_val), int(a_val)
+            elif "shots total" in tipo:
+                stats["chutes_tot_h"], stats["chutes_tot_a"] = int(h_val), int(a_val)
+            elif "red cards" in tipo:
+                stats["red_cards_h"], stats["red_cards_a"] = int(h_val), int(a_val)
+        return stats
+    except: return {}
+
+def get_stats_bzzoiro(fid_raw, home, away):
+    try:
+        headers = {"Authorization": "Token " + BZZOIRO_TOKEN}
+        r = requests.get(f"{BZZOIRO_URL}/api/v2/events/{fid_raw}/stats/", headers=headers, timeout=10)
+        data = r.json()
+        raw_stats = data.get("stats", {})
+        stats = {}
+        for side, key in [("home", "h"), ("away", "a")]:
+            side_data = raw_stats.get(side, {})
+            shots = side_data.get("shots", {})
+            if isinstance(shots, dict):
+                stats[f"chutes_tot_{key}"] = int(shots.get("total", 0) or 0)
+                stats[f"chutes_gol_{key}"] = int(shots.get("on_target", 0) or 0)
+            stats[f"escanteios_{key}"] = int(side_data.get("corners", 0) or 0)
+            cards = side_data.get("cards", {})
+            if isinstance(cards, dict):
+                stats[f"red_cards_{key}"] = int(cards.get("red", 0) or 0)
+        return stats
+    except: return {}
+
+def get_stats_espn(eid, home, away):
+    """Busca estatísticas de um jogo via ESPN summary. Sem custo."""
+    try:
+        r    = requests.get(ESPN_SUMMARY, params={"event": eid}, timeout=10)
+        data = r.json()
+        stats = {}
+        teams_data = data.get("boxscore", {}).get("teams", [])
+        if not teams_data:
+            return {}
+        # Identifica home/away pelo campo homeAway dos competitors no header
+        competitors = data.get("header", {}).get("competitions", [{}])[0].get("competitors", [])
+        home_id = None
+        away_id = None
+        for c in competitors:
+            if c.get("homeAway") == "home": home_id = str(c.get("team", {}).get("id", ""))
+            if c.get("homeAway") == "away": away_id = str(c.get("team", {}).get("id", ""))
+        for team_box in teams_data:
+            tid  = str(team_box.get("team", {}).get("id", ""))
+            if home_id and away_id:
+                side = "h" if tid == home_id else "a"
+            else:
+                # fallback pelo nome se não tiver id
+                tname = team_box.get("team", {}).get("displayName", "")
+                side  = "h" if tname.lower() == home.lower() else "a"
+            for s in team_box.get("statistics", []):
+                label = s.get("label", "").lower()
+                name  = s.get("name", "")
+                val   = s.get("displayValue", "0")
+                try: val_int = int(val)
+                except: val_int = 0
+                if "corner"  in label:
+                    stats[f"escanteios_{side}"] = val_int
+                    stats[f"corner_data_{side}"] = True
+                if label == "shots":                     stats[f"chutes_tot_{side}"]      = val_int
+                if "on goal" in label:                   stats[f"chutes_gol_{side}"]      = val_int
+                if "red"     in label:                   stats[f"red_cards_{side}"]       = val_int
+                if "possession" in label:
+                    try: stats[f"posse_{side}"] = float(val)
+                    except: stats[f"posse_{side}"] = 0.0
+                if name == "accuratePasses":             stats[f"passes_precisos_{side}"] = val_int
+
+        # Garante defaults
+        for side in ["h", "a"]:
+            for k in ["chutes_tot", "chutes_gol", "red_cards", "passes_precisos"]:
+                stats.setdefault(f"{k}_{side}", 0)
+            stats.setdefault(f"posse_{side}", 0.0)
+        # Escanteios: -1 = sem dados (liga não suportada)
+        stats.setdefault("escanteios_h", -1)
+        stats.setdefault("escanteios_a", -1)
+
+        stats["fav_side"] = "h" if stats.get("chutes_tot_h", 0) >= stats.get("chutes_tot_a", 0) else "a"
+        print(f"[ESPN Stats] {home} x {away} | chutes: {stats.get('chutes_tot_h',0)}/{stats.get('chutes_tot_a',0)} | cantos: {stats.get('escanteios_h',0)}/{stats.get('escanteios_a',0)}")
+        return stats
+    except Exception as e:
+        print(f"[ESPN Stats] Erro: {e}")
+        return {}
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# FALLBACK — apifootball: estatísticas (usado se ESPN falhar)
+# ═══════════════════════════════════════════════════════════════════════════════
+    for key in API_FOOTBALL_KEYS:
+        try:
+            r     = requests.get(f"{API_FOOTBALL_URL}/fixtures/statistics",
+                                 params={"fixture": fid},
+                                 headers={"x-apisports-key": key}, timeout=10)
+            rjson = r.json()
+            if (r.headers.get("x-ratelimit-requests-remaining") == "0"
+                    or (isinstance(rjson.get("errors"), dict) and rjson.get("errors", {}).get("requests"))
+                    or (isinstance(rjson.get("errors"), dict) and rjson.get("errors", {}).get("access"))):
+                print(f"[apifootball] Chave {key[:8]}... indisponível")
+                continue
+            data = rjson.get("response", [])
+            if not data: continue
+            stats   = {}
+            home_id = data[0]["team"]["id"]
+            for team in data:
+                side = "h" if team["team"]["id"] == home_id else "a"
+                for s in team["statistics"]:
+                    k   = s["type"].lower().replace(" ", "_")
+                    val = s["value"] or 0
+                    if k == "corner_kicks":  stats[f"escanteios_{side}"] = val
+                    if k == "total_shots":   stats[f"chutes_tot_{side}"]  = val
+                    if k == "shots_on_goal": stats[f"chutes_gol_{side}"]  = val
+            r2     = requests.get(f"{API_FOOTBALL_URL}/fixtures/events",
+                                  params={"fixture": fid},
+                                  headers={"x-apisports-key": key}, timeout=10)
+            events = r2.json().get("response", [])
+            red_h, red_a = 0, 0
+            for ev in events:
+                if ev.get("type") == "Card" and "Red" in (ev.get("detail") or ""):
+                    if ev.get("team", {}).get("id") == home_id: red_h += 1
+                    else: red_a += 1
+            stats["red_cards_h"], stats["red_cards_a"] = red_h, red_a
+            stats["fav_side"] = "h" if stats.get("chutes_tot_h", 0) >= stats.get("chutes_tot_a", 0) else "a"
+            print(f"[apifootball] Stats OK chave {key[:8]}...")
+            return stats
+        except:
+            continue
+    return {}
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# API 3 — ODDS: favorito pela menor odd (ESPN moneyline ou The Odds API)
+# ═══════════════════════════════════════════════════════════════════════════════
+def _moneyline_to_decimal(ml):
+    """Converte moneyline americano para decimal."""
+    try:
+        ml = float(ml)
+        if ml > 0:
+            return round(ml / 100 + 1, 3)
+        else:
+            return round(100 / abs(ml) + 1, 3)
+    except:
+        return 99.0
+
+def get_favorito_odds(home, away, fid=None, league=None):
+    """Retorna 'h' ou 'a' baseado na menor odd. Usa ESPN primeiro, depois Odds API."""
+    # Tenta ESPN (grátis, sem cota)
+    if fid and league:
+        try:
+            url = f"https://site.api.espn.com/apis/site/v2/sports/soccer/{league}/scoreboard"
+            r = requests.get(url, timeout=6)
+            for ev in r.json().get("events", []):
+                comp = ev.get("competitions", [{}])[0]
+                ev_fid = str(comp.get("id", ""))
+                if ev_fid != str(fid):
+                    continue
+                odds_list = comp.get("odds", [])
+                for odd in odds_list:
+                    if not odd:
+                        continue
+                    ml = odd.get("moneyline", {})
+                    if ml:
+                        # Tenta current (ao vivo), depois close (pré-jogo), depois open
+                        def _get_ml(side):
+                            for key in ("current", "close", "open"):
+                                v = ml.get(side, {}).get(key, {}).get("odds")
+                                if v:
+                                    return v
+                            return 99
+                        odd_h = _moneyline_to_decimal(_get_ml("home"))
+                        odd_a = _moneyline_to_decimal(_get_ml("away"))
+                        if odd_h < 90 and odd_a < 90:
+                            fav = "h" if odd_h <= odd_a else "a"
+                            print(f"[ODDS-ESPN] {home} x {away} | Casa:{odd_h} Fora:{odd_a} → Fav:{fav}")
+                            return fav
+        except Exception as e:
+            print(f"[ODDS-ESPN] Erro: {e}")
+
+    # Fallback 2: APIfootball.com odds (quando fid for do apifootball)
+    if fid and str(fid).replace("apfc_","").isdigit():
+        try:
+            match_id = str(fid).replace("apfc_","")
+            r = requests.get("https://apiv3.apifootball.com/",
+                             params={"action": "get_odds", "match_id": match_id,
+                                     "APIkey": APIFOOTBALL_COM_KEY}, timeout=8)
+            odds_data = r.json()
+            if isinstance(odds_data, list) and odds_data:
+                odd = odds_data[0]
+                try:
+                    odd_h = float(odd.get("odd_1", 0) or 0)
+                    odd_a = float(odd.get("odd_2", 0) or 0)
+                    if odd_h > 1 and odd_a > 1:
+                        fav = "h" if odd_h <= odd_a else "a"
+                        print(f"[ODDS-APFC] {home} x {away} | Casa:{odd_h} Fora:{odd_a} → Fav:{fav}")
+                        return fav
+                except:
+                    pass
+        except Exception as e:
+            print(f"[ODDS-APFC] Erro: {e}")
+
+    # Fallback 3: Odds API (quando tiver cota)
+    try:
+        r = requests.get("https://api.the-odds-api.com/v4/sports/soccer/odds/",
+                         params={"apiKey": ODDS_API_KEY, "regions": "eu",
+                                 "markets": "h2h", "oddsFormat": "decimal"}, timeout=10)
+        if r.status_code == 200:
+            for evento in r.json():
+                nomes = [evento.get("home_team","").lower(), evento.get("away_team","").lower()]
+                if home.lower() in nomes and away.lower() in nomes:
+                    for book in evento.get("bookmakers", []):
+                        for mkt in book.get("markets", []):
+                            if mkt["key"] == "h2h":
+                                outcomes = {o["name"].lower(): o["price"] for o in mkt["outcomes"]}
+                                odd_h = outcomes.get(home.lower(), 99)
+                                odd_a = outcomes.get(away.lower(), 99)
+                                fav = "h" if odd_h <= odd_a else "a"
+                                print(f"[ODDS-API] {home} x {away} | Casa:{odd_h} Fora:{odd_a} → Fav:{fav}")
+                                return fav
+    except:
+        pass
     return None
-
-
-
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # FILTRO DE JANELAS
 # ═══════════════════════════════════════════════════════════════════════════════
-
-
-
 def get_odd_favorito_num(home, away, fid=None, league=None):
-    """Retorna 'h' ou 'a'. Busca odds por evento e nome."""
-    # Tenta apifootball v3 (Mestre)
+    """Retorna a odd decimal do favorito (numero). Usa ESPN primeiro, depois Odds API."""
+    if fid and league:
+        try:
+            url = f"https://site.api.espn.com/apis/site/v2/sports/soccer/{league}/scoreboard"
+            r = requests.get(url, timeout=6)
+            for ev in r.json().get("events", []):
+                comp = ev.get("competitions", [{}])[0]
+                if str(comp.get("id", "")) != str(fid):
+                    continue
+                for odd in comp.get("odds", []):
+                    if not odd:
+                        continue
+                    ml = odd.get("moneyline", {})
+                    if ml:
+                        def _get_ml(side):
+                            for key in ("current", "close", "open"):
+                                v = ml.get(side, {}).get(key, {}).get("odds")
+                                if v:
+                                    return v
+                            return 99
+                        odd_h = _moneyline_to_decimal(_get_ml("home"))
+                        odd_a = _moneyline_to_decimal(_get_ml("away"))
+                        if odd_h < 90 and odd_a < 90:
+                            return min(odd_h, odd_a)
+        except:
+            pass
     try:
-        hoje = datetime.now(BRT).strftime('%Y-%m-%d')
-        url = f"https://apiv3.apifootball.com/?action=get_odds&from={hoje}&to={hoje}&APIkey={APIFOOTBALL_KEY}"
-        r = requests.get(url, timeout=10)
-        data = r.json()
-        if isinstance(data, list):
-            for o in data:
-                nom_h = str(o.get("match_hometeam_name", "")).lower()
-                nom_a = str(o.get("match_awayteam_name", "")).lower()
-                if home.lower() in nom_h or away.lower() in nom_a:
-                    mkt = o.get("odds", {}).get("1x2", []) or o.get("odd_1x2", [])
-                    if mkt:
-                        oh, oa = float(mkt[0].get("home", 99)), float(mkt[0].get("away", 99))
-                        return "h" if oh < oa else "a"
-    except: pass
-    
-    # Se falhar, e for jogo de expressão, vamos tentar um "Favorito Estimado" 
-    # apenas para logs, mas retornar None para cumprir a regra do Cleubiano.
-    return None
-
-
+        r = requests.get("https://api.the-odds-api.com/v4/sports/soccer/odds/",
+                         params={"apiKey": ODDS_API_KEY, "regions": "eu",
+                                 "markets": "h2h", "oddsFormat": "decimal"}, timeout=10)
+        if r.status_code == 200:
+            for evento in r.json():
+                nomes = [evento.get("home_team","").lower(), evento.get("away_team","").lower()]
+                if home.lower() in nomes and away.lower() in nomes:
+                    for book in evento.get("bookmakers", []):
+                        for mkt in book.get("markets", []):
+                            if mkt["key"] == "h2h":
+                                outcomes = {o["name"].lower(): o["price"] for o in mkt["outcomes"]}
+                                odd_h = outcomes.get(home.lower(), 99)
+                                odd_a = outcomes.get(away.lower(), 99)
+                                return min(odd_h, odd_a)
+    except:
+        pass
+    return 99
 
 def calcular_prob_gols_ht(chutes_tot, chutes_gol, minuto):
     """Estima prob de gols usando taxa de chutes como proxy de xG."""
@@ -956,27 +1325,25 @@ def calcular_prob_gols_ht(chutes_tot, chutes_gol, minuto):
     prob_15_ft = round((1 - _math.exp(-max(xg_total_ft - 1, 0.1))) * 100, 1)
     return prob_15_ft, prob_05_ht
 
-
-
 def filtrar_janelas(jogos):
     resultado = []
     for j in jogos:
         m = j["minuto"]
         p_raw = j["period"]
-        p = 2 if (isinstance(p_raw, str) and '2' in p_raw) or p_raw == 2 else 1
-        
-        # MINUTAGENS SAGRADAS - NÃO ALTERAR
+        if isinstance(p_raw, str):
+            p = 2 if '2' in p_raw else 1
+        else:
+            p = p_raw
+            
         em_janela = (
-            (p == 1 and 15 <= m <= 27) or # Over HT / Limite HT
-            (p == 1 and 30 <= m <= 38) or # Escanteio HT
-            (p == 2 and 60 <= m <= 75) or # BTTS / Over 1.5 / Over Gol Partida
-            (p == 2 and 80 <= m <= 88)    # Escanteio FT
+            (p == 1 and 15 <= m <= 27) or
+            (p == 1 and 30 <= m <= 38) or
+            (p == 2 and 60 <= m <= 75) or
+            (p == 2 and 80 <= m <= 88)
         )
-        if True:
+        if em_janela:
             resultado.append(j)
     return resultado
-
-
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # MENSAGEM PADRÃO
@@ -1088,13 +1455,6 @@ def gerar_motivo(mercado, stats, sh, sa, fav_final, cantos_atual=0):
     return f"Jogo equilibrado, ambas criando chances — {chutes_h} chutes de Casa x {chutes_a} de Fora{posse_txt}{vermelho}"
 
 def msg_universal(home, away, minuto, liga, n, mercado, entrada, placar, extra_val=None, cantos_atual=0, stats=None, sh=0, sa=0, fav_final="h"):
-
-    # DEBUG STATS: Logar o que o bot recebeu
-    if stats:
-        print(f"[DEBUG-STATS] {home} x {away}: {stats}")
-    else:
-        print(f"[DEBUG-STATS] {home} x {away}: SEM ESTATISTICAS NO OBJETO stats")
-
     sep    = "━━━━━━━━━━━━━━━━━━━━"
     motivo = gerar_motivo(mercado, stats, sh, sa, fav_final, cantos_atual)
     if "CORNER" in mercado:
@@ -1110,21 +1470,32 @@ def msg_universal(home, away, minuto, liga, n, mercado, entrada, placar, extra_v
         "CORNER_FT": "⛳️🔥<b>ESCANTEIO LIMITE FT</b>🔥⛳️",
     }
     title = titles.get(mercado, f"⚽️🔥<b>{mercado}</b>🔥⚽️")
-    stats_visual = ""
-    if stats:
-        ch_h = stats.get("chutes_tot_h", sh); ch_a = stats.get("chutes_tot_a", sa)
-        cg_h = stats.get("chutes_gol_h", 0); cg_a = stats.get("chutes_gol_a", 0)
-        cn_h = max(0, stats.get("escanteios_h", 0)); cn_a = max(0, stats.get("escanteios_a", 0))
-        ph_raw = stats.get("posse_h", 0.0); pa_raw = stats.get("posse_a", 0.0)
-        ph = int(round(float(ph_raw) * 100)) if float(ph_raw) <= 1 else int(round(float(ph_raw)))
-        pa = int(round(float(pa_raw) * 100)) if float(pa_raw) <= 1 else int(round(float(pa_raw)))
-        stats_visual = f"📊 <b>Estatísticas ao Vivo:</b>\n📈 Posse: {ph}% - {pa}%\n🚀 Chutes: {ch_h} - {ch_a}\n🎯 No Alvo: {cg_h} - {cg_a}\n⛳️ Cantos: {cn_h} - {cn_a}\n{sep}\n"
-    header = f"{sep}\n{title}\n⚽️ Placar: {placar}\n🌏 Liga: {liga}\n📡 <b>{home}</b> x <b>{away}</b>\n⏰️ Minuto: <b>{minuto}'</b>\n{sep}\n"
-    body = f"{stats_visual}📝 <b>Análise Técnica:</b>\n{motivo}\n💰 Odd Mínima: <b>1.70</b>\n{sep}\n"
-    footer = ""
-    if "CORNER" in mercado: footer += f"⛳️ Escanteios Atuais: <b>{cantos_atual}</b>\n"
-    footer += f"📌 Entrada: <b>{entrada}</b>\n✅ Critérios: <b>{n}/6</b>\n{sep}\n⚠️Jogue com responsabilidade⚠️"
-    return header + body + footer
+
+    if "CORNER" in mercado:
+        return (
+            f"{sep}\n{title}\n⚽️ Placar: {placar}\n🌏 Liga: {liga}\n"
+            f"📡 <b>{home}</b> x <b>{away}</b>\n⏰️ Minuto: <b>{minuto}'</b>\n{sep}\n"
+            f"📊 <b>Análise ao Vivo da Entrada:</b>\n📝 {motivo}\n"
+            f"💰 Odd Mínima Recomendada: 1.70\n{sep}\n"
+            f"⛳️ Escanteios Atuais: <b>{cantos_atual}</b>\n"
+            f"📌 Entrada: <b>{entrada}</b>\n"
+            f"✅ Critérios: <b>{n}/6</b>\n{sep}\n"
+            f"⚠️Jogue com responsabilidade⚠️"
+        )
+    return (
+        f"{sep}\n{title}\n⚽️ Placar: {placar}\n🌏 Liga: {liga}\n"
+        f"📡 <b>{home}</b> x <b>{away}</b>\n⏰️ Minuto: <b>{minuto}'</b>\n{sep}\n"
+        f"📊 <b>Análise ao Vivo da Entrada:</b>\n📝 {motivo}\n"
+        f"💰 Odd Mínima Recomendada: 1.70\n{sep}\n"
+        f"📌 Entrada: <b>{entrada}</b>\n✅ Critérios: <b>{n}/6</b>\n{sep}\n"
+        f"⚠️Jogue com responsabilidade⚠️"
+    )
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# VALIDAÇÃO DE RESULTADOS (usa ESPN para checar placar final)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
 
 def checar_resultado(sinal):
     try:
@@ -1295,119 +1666,280 @@ def check_status_command(total_jogos_live=0, jogos_live=None, jogos_na_janela=No
 # ═══════════════════════════════════════════════════════════════════════════════
 # LOOP PRINCIPAL
 # ═══════════════════════════════════════════════════════════════════════════════
-
-
-
-
-
-
 def run():
-    print("[RUN] Iniciando Varredura com Fallback de Dados...")
-    sent = load_sent()
+    print("[Iniciando monitoramento — ESPN + apifootball + Odds API]")
+    sent      = load_sent()
     total_env = 0
-    
-    try: jogos_apif = get_jogos_apifootball_v3([])
-    except: jogos_apif = []
-    fids_existentes = {j["fid"] for j in jogos_apif}
-    
-    try: jogos_espn = get_jogos_espn_global()
-    except: jogos_espn = []
-    
-    try: jogos_bzz = get_jogos_bzzoiro(fids_existentes)
-    except: jogos_bzz = []
-    
-    jogos_live = jogos_apif + [j for j in jogos_espn if j["fid"] not in fids_existentes] + jogos_bzz
+    # janela_id por hora — evita duplicata mesmo se Actions rodar 2x no mesmo minuto
+    janela_id = datetime.now(BRT).strftime('%Y%m%d%H')
+
+    # PASSO 1A: ESPN busca todos os jogos ao vivo
+    jogos_espn = get_jogos_espn()
+    fids_espn  = {j["fid"] for j in jogos_espn}
+
+    # PASSO 1B: apifootball preenche o que ESPN não cobre
+    jogos_apif = get_jogos_apifootball(fids_espn)
+
+    # Junta tudo — ESPN tem prioridade (stats mais ricas via summary)
+    jogos_live = jogos_espn + jogos_apif
+    print(f"[Total] {len(jogos_live)} jogos ao vivo (ESPN={len(jogos_espn)} + apifootball=0)")
+
+    # PASSO 2: Filtra janelas alvo
     jogos_na_janela = filtrar_janelas(jogos_live)
-    print(f"[SCAN] {len(jogos_live)} total | {len(jogos_na_janela)} na janela")
+    print(f"[Janela] {len(jogos_na_janela)} jogos nas janelas alvo")
 
+    check_status_command(total_jogos_live=len(jogos_live), jogos_live=jogos_live, jogos_na_janela=jogos_na_janela)
+
+    if not jogos_na_janela:
+        print("[OK] Nenhum jogo na janela — aguardando próximo ciclo")
+        save_sent(sent)
+        print("Finalizado. Enviados: 0")
+        return
+
+    # PASSO 3: Analisa cada jogo na janela
     for j in jogos_na_janela:
-        fid, h, a = j["fid"], j["home"], j["away"]
-        m, p, sh, sa = j["minuto"], j["period"], j["sh"], j["sa"]
-        placar, liga = f"{sh}x{sa}", str(j.get("liga", ""))
+        fid    = j["fid"]
+        h, a   = j["home"], j["away"]
+        m, p   = j["minuto"], j["period"]
+        sh, sa = j["sh"], j["sa"]
+        liga   = str(j["liga"])
+        stot   = sh + sa
+        placar = f"{sh}x{sa}"
+
+        print(f"[Analisando] {h} x {a} | {placar} | {m}min")
+
+        # Busca stats UMA vez — reutiliza para tudo (fonte depende da origem do jogo)
         source = j.get("source", "espn")
+        if source == "apifootball":
+            stats = get_stats_apifootball_live(fid)
+        else:
+            source = j.get("source", "espn")
+        if source == "apifootball":
+            stats = get_stats_apifootball_v3(j["fid_raw"])
+        elif source == "bzzoiro":
+            stats = get_stats_bzzoiro(j["fid_raw"], h, a)
+        else:
+            source = j.get("source", "espn")
+        if source == "apifootball":
+            stats = get_stats_apifootball_v3(j["fid_raw"])
+        elif source == "bzzoiro":
+            stats = get_stats_bzzoiro(j["fid_raw"], h, a)
+        else:
+            source = j.get("source", "espn")
+        if source == "apifootball":
+            stats = get_stats_apifootball_v3(j["fid_raw"])
+        elif source == "bzzoiro":
+            stats = get_stats_bzzoiro(j["fid_raw"], h, a)
+        else:
+            stats = get_stats_espn(fid, h, a)
 
-        stats = {}
+        # Verifica se tem dados reais — sem stats E sem odds, pula o jogo
+        tem_stats = stats and (
+            stats.get("chutes_tot_h", 0) > 0 or
+            stats.get("chutes_tot_a", 0) > 0 or
+            stats.get("escanteios_h", -1) >= 0 or
+            stats.get("escanteios_a", -1) >= 0
+        )
+
+        # Determinar favorito pelas odds (ESPN primeiro, depois Odds API)
+        fav_final = get_favorito_odds(h, a, fid=fid, league=j.get("liga_slug", j.get("liga", "")))
+        fav_por_odds = fav_final in ("h", "a")
+
         try:
-            stats = get_stats_apifootball_v3(j.get("fid_raw", fid))
+            r_odd = requests.get("https://apiv3.apifootball.com/",
+                             params={"action": "get_odds", "match_id": fid, "APIkey": APIFOOTBALL_COM_KEY}, timeout=8)
+            odds_data = r_odd.json()
+            if isinstance(odds_data, list) and odds_data:
+                odd = odds_data[0]
+                odd_h, odd_a = float(odd.get("odd_1", 0)), float(odd.get("odd_2", 0))
+                if odd_h > 1 and odd_a > 1:
+                    fav_final = "h" if odd_h <= odd_a else "a"
+                    fav_por_odds = True
         except: pass
-            
-        if not stats or (stats.get("chutes_tot_h", 0) + stats.get("chutes_tot_a", 0) == 0):
-            stats = {
-                "chutes_tot_h": j.get("sh", 0), "chutes_tot_a": j.get("sa", 0),
-                "chutes_gol_h": j.get("sgh", 0), "chutes_gol_a": j.get("sga", 0),
-                "escanteios_h": j.get("ch", 0), "escanteios_a": j.get("ca", 0),
-                "red_cards_h": j.get("rh", 0), "red_cards_a": j.get("ra", 0)
-            }
-        
-        print(f"  [ANALYZE] {h}x{a} | Stats: {stats.get('chutes_tot_h')}x{stats.get('chutes_tot_a')}")
 
-        fav_final = get_odd_favorito_num(h, a, fid=fid, league=j.get("liga_slug", liga))
-        if not fav_final:
-            fav_final = "h" if stats.get("chutes_tot_h", 0) >= stats.get("chutes_tot_a", 0) else "a"
-        
+    if not fav_por_odds:
+        try:
+            r = requests.get("https://apiv3.apifootball.com/",
+                             params={"action": "get_odds", "match_id": fid, "APIkey": APIFOOTBALL_COM_KEY}, timeout=8)
+            odds_data = r.json()
+            if isinstance(odds_data, list) and odds_data:
+                odd = odds_data[0]
+                odd_h, odd_a = float(odd.get("odd_1", 0)), float(odd.get("odd_2", 0))
+                if odd_h > 1 and odd_a > 1:
+                    fav_final = "h" if odd_h <= odd_a else "a"
+                    fav_por_odds = True
+        except: pass
+
+    if not fav_por_odds:
+        try:
+            r = requests.get("https://apiv3.apifootball.com/",
+                             params={"action": "get_odds", "match_id": fid, "APIkey": APIFOOTBALL_COM_KEY}, timeout=8)
+            odds_data = r.json()
+            if isinstance(odds_data, list) and odds_data:
+                odd = odds_data[0]
+                odd_h, odd_a = float(odd.get("odd_1", 0)), float(odd.get("odd_2", 0))
+                if odd_h > 1 and odd_a > 1:
+                    fav_final = "h" if odd_h <= odd_a else "a"
+                    fav_por_odds = True
+        except: pass
+
+
+        # Sem odds = usa stats (chutes) como fallback para definir favorito
+        if not fav_por_odds:
+            if stats and stats.get("fav_side") in ("h", "a"):
+                fav_final = stats["fav_side"]
+                print(f"[FAV-STATS] {h} x {a} — sem odds, favorito pelo chutes: {fav_final}")
+            elif stats and (stats.get("chutes_tot_h", 0) > 0 or stats.get("chutes_tot_a", 0) > 0):
+                fav_final = "h" if stats.get("chutes_tot_h", 0) >= stats.get("chutes_tot_a", 0) else "a"
+                print(f"[FAV-STATS] {h} x {a} — sem odds, favorito pelo chutes: {fav_final}")
+            else:
+                fav_final = "h"
+                print(f"[FAV-HOME] {h} x {a} — sem odds e sem stats, assumindo mandante como favorito")
+
+        red_fav = stats.get(f"red_cards_{fav_final}", 0) if stats else 0
+
+        # Placar do favorito e adversário
+        fav_gols = sh if fav_final == "h" else sa
+        adv_gols = sa if fav_final == "h" else sh
+
+        # Favorito empatando = placar igual
         fav_empatando = (sh == sa)
-        fav_perdendo_1 = (fav_final == "h" and sa == sh + 1) or (fav_final == "a" and sh == sa + 1)
-        red_fav = stats.get("red_cards_h", 0) if fav_final == "h" else stats.get("red_cards_a", 0)
-        ch_gol_fav = stats.get("chutes_gol_h", 0) if fav_final == "h" else stats.get("chutes_gol_a", 0)
-        ch_tot_fav = stats.get("chutes_tot_h", 0) if fav_final == "h" else stats.get("chutes_tot_a", 0)
-        
-        fav_amassando = (ch_gol_fav >= 1 or ch_tot_fav >= 2)
-        ambas_press = (stats.get("chutes_tot_h", 0) >= 2 and stats.get("chutes_tot_a", 0) >= 2)
+        # Favorito perdendo por exatamente 1 gol — SOMENTE placares 0x1 ou 1x0 (total = 1 gol) — usado em OFT
+        fav_perdendo_1 = (adv_gols - fav_gols) == 1 and (sh + sa) == 1
+        # Favorito perdendo por exatamente 1 gol sem restrição de total — usado em escanteios e overgoal
+        fav_perdendo_1_livre = (adv_gols - fav_gols) == 1
+        # Condição escanteio: fav empatando OU perdendo por 1 (qualquer placar)
+        corner_valido = fav_empatando or fav_perdendo_1_livre
+        # Over 1.5 FT: placares válidos APENAS 1x0 ou 0x1 (fav perdendo por 1, total = 1 gol)
+        fav_gols_oft = sh if fav_final == "h" else sa
+        adv_gols_oft = sa if fav_final == "h" else sh
+        oft_valido = (
+            (adv_gols_oft - fav_gols_oft) == 1 and
+            (sh + sa) == 1
+        )
 
-        n_crit = 0
-        if fav_final: n_crit += 1
-        if (p == 1 and 15 <= m <= 38) or (p == 2 and 60 <= m <= 88): n_crit += 1
-        if (fav_empatando or fav_perdendo_1): n_crit += 1
-        if red_fav == 0: n_crit += 1
-        if fav_amassando: n_crit += 1
-        if ambas_press: n_crit += 1
-        n_crit = max(4, min(6, n_crit))
+        # MERCADO 1: OVER 0.5 HT (15-27 min, 0x0, favorito empatando, sem vermelho do fav)
+        if p == 1 and 15 <= m <= 27 and sh == 0 and sa == 0 and fav_empatando and red_fav == 0:
+            hoje = datetime.now(BRT).strftime('%Y%m%d')
+            key = f"{fid}_ht_{hoje}"
+            if key not in sent:
+                mid = send_telegram(msg_universal(h, a, m, liga, 3, "HT", "Over 0.5 HT", placar, stats=stats, sh=sh, sa=sa, fav_final=fav_final), marca=key, home=h, away=a)
+                if mid:
+                    sent.add(key); total_env += 1
+                    registrar_sinal(fid, "HT", h, a, mid)
 
-        hoje = datetime.now(BRT).strftime('%Y%m%d')
-        
-        # MERCADOS
-        if p == 1 and 15 <= m <= 27 and sh == 0 and sa == 0 and red_fav == 0:
-            if fav_amassando or ambas_press:
-                key = f"{fid}_ht_{hoje}"
+        # MERCADO 1B: OVER GOL LIMITE HT (15-25 min, 0x0, odd fav ≤ 1.50, prob 1.5 FT ≥ 75%, prob 0.5 HT ≥ 65%, APPM fav ≥ 1)
+        if p == 1 and 15 <= m <= 25 and red_fav == 0:
+            odd_fav_num = get_odd_favorito_num(h, a, fid=fid, league=j.get("liga_slug", j.get("liga", "")))
+            chutes_tot_total = (stats.get("chutes_tot_h", 0) + stats.get("chutes_tot_a", 0)) if stats else 0
+            chutes_gol_total = (stats.get("chutes_gol_h", 0) + stats.get("chutes_gol_a", 0)) if stats else 0
+            chutes_gol_fav   = stats.get(f"chutes_gol_{fav_final}", 0) if stats else 0
+            prob_15_ft, prob_05_ht = calcular_prob_gols_ht(chutes_tot_total, chutes_gol_total, m)
+            appm_fav = chutes_gol_fav
+            print(f"[LIMITE-HT] {h} x {a} | odd_fav={odd_fav_num} | prob_15ft={prob_15_ft}% | prob_05ht={prob_05_ht}% | appm={appm_fav}")
+            if (odd_fav_num <= 1.50 and prob_15_ft >= 75 and prob_05_ht >= 65 and appm_fav >= 1):
+                hoje = datetime.now(BRT).strftime('%Y%m%d')
+                key = f"{fid}_limiteht_{hoje}"
                 if key not in sent:
-                    mid = send_telegram(msg_universal(h, a, m, liga, n_crit, "HT", "Over 0.5 HT", placar, stats=stats, sh=sh, sa=sa, fav_final=fav_final), marca=key, home=h, away=a)
-                    if mid: sent.add(key); total_env += 1; registrar_sinal(fid, "HT", h, a, mid)
-        
+                    mid = send_telegram(msg_universal(h, a, m, liga, 4, "LIMITEHT", "Over 0.5 HT", placar, stats=stats, sh=sh, sa=sa, fav_final=fav_final), marca=key, home=h, away=a)
+                    if mid:
+                        sent.add(key); total_env += 1
+                        registrar_sinal(fid, "LIMITEHT", h, a, mid)
+
+        # MERCADO 2: AMBAS MARCAM BTTS (60-75 min, fav perdendo por 1, sem vermelho do fav)
+        if p == 2 and 60 <= m <= 75 and ((sh == 1 and sa == 0) or (sh == 0 and sa == 1)) and fav_perdendo_1 and red_fav == 0:
+            hoje = datetime.now(BRT).strftime('%Y%m%d')
+            key = f"{fid}_btts_{hoje}"
+            if key not in sent:
+                mid = send_telegram(msg_universal(h, a, m, liga, 4, "BTTS", "Ambas Marcam", placar, stats=stats, sh=sh, sa=sa, fav_final=fav_final), marca=key, home=h, away=a)
+                if mid:
+                    sent.add(key); total_env += 1
+                    registrar_sinal(fid, "BTTS", h, a, mid)
+
+        # MERCADO 3: OVER 1.5 FT (60-75 min, fav empatando ou perdendo por 1, placares: 0x0/1x0/0x1/1x1, sem vermelho do fav)
+        if p == 2 and 60 <= m <= 75 and ((sh == 1 and sa == 0) or (sh == 0 and sa == 1)) and fav_perdendo_1 and red_fav == 0:
+            hoje = datetime.now(BRT).strftime('%Y%m%d')
+            key = f"{fid}_oft_{hoje}"
+            if key not in sent:
+                mid = send_telegram(msg_universal(h, a, m, liga, 4, "OFT", "Over 1.5 FT", placar, stats=stats, sh=sh, sa=sa, fav_final=fav_final), marca=key, home=h, away=a)
+                if mid:
+                    sent.add(key); total_env += 1
+                    registrar_sinal(fid, "OFT", h, a, mid)
+
+        # MERCADO 4: OVER GOL PARTIDA (60-75 min, placares 0x0/1x1/0x1/1x0, favorito empatando ou perdendo por 1)
+        overgoal_valido = (fav_empatando or fav_perdendo_1)
+        if p == 2 and 60 <= m <= 75 and overgoal_valido and red_fav == 0:
+            hoje = datetime.now(BRT).strftime('%Y%m%d')
+            key = f"{fid}_overgoal_{hoje}"
+            # Linha dinâmica: sempre acima do total de gols atual
+            total_gols = sh + sa
+            if total_gols == 0:
+                linha_over = "Over 0.5 FT"
+            elif total_gols == 1:
+                linha_over = "Over 1.5 FT"
+            elif total_gols == 2:
+                linha_over = "Over 2.5 FT"
+            elif total_gols == 3:
+                linha_over = "Over 3.5 FT"
+            else:
+                linha_over = f"Over {total_gols + 0.5:.1f} FT"
+            if key not in sent:
+                mid = send_telegram(msg_universal(h, a, m, liga, 4, "OVERGOAL", linha_over, placar, stats=stats, sh=sh, sa=sa, fav_final=fav_final), marca=key, home=h, away=a)
+                if mid:
+                    sent.add(key); total_env += 1
+                    registrar_sinal(fid, "OVERGOAL", h, a, mid, extra_val=total_gols)
+
+        # MERCADO 5: ESCANTEIO LIMITE HT (30-38 min, fav confirmado, empatando ou perdendo por 1, sem vermelho)
         if p == 1 and 30 <= m <= 38 and (fav_empatando or fav_perdendo_1) and red_fav == 0:
+            hoje = datetime.now(BRT).strftime('%Y%m%d')
             key = f"{fid}_cht_{hoje}"
-            cantos = stats.get("escanteios_h", 0) + stats.get("escanteios_a", 0)
-            if key not in sent:
-                mid = send_telegram(msg_universal(h, a, m, liga, n_crit, "CORNER_HT", "", placar, cantos_atual=cantos, stats=stats, sh=sh, sa=sa, fav_final=fav_final), marca=key, home=h, away=a)
-                if mid: sent.add(key); total_env += 1; registrar_sinal(fid, "CORNER_HT", h, a, mid, extra_val=cantos)
+            cantos_h = stats.get("escanteios_h", -1) if stats else -1
+            cantos_a = stats.get("escanteios_a", -1) if stats else -1
+            cantos = (max(0, cantos_h) + max(0, cantos_a)) if (cantos_h >= 0 and cantos_a >= 0) else -1
+            if cantos < 0:
+                print(f"[SKIP-CORNER-HT] {h} x {a} — escanteios sem dado real, pulando")
+            elif key not in sent:
+                mid = send_telegram(msg_universal(h, a, m, liga, 5, "CORNER_HT", "", placar, cantos_atual=cantos, stats=stats, sh=sh, sa=sa, fav_final=fav_final), marca=key, home=h, away=a)
+                if mid:
+                    sent.add(key); total_env += 1
+                    registrar_sinal(fid, "CORNER_HT", h, a, mid, extra_val=cantos)
 
-        if p == 2 and 60 <= m <= 75 and (fav_empatando or fav_perdendo_1) and red_fav == 0:
-            if fav_amassando or ambas_press:
-                key = f"{fid}_ft_{hoje}"
-                if key not in sent:
-                    mid = send_telegram(msg_universal(h, a, m, liga, n_crit, "OFT", "", placar, stats=stats, sh=sh, sa=sa, fav_final=fav_final), marca=key, home=h, away=a)
-                    if mid: sent.add(key); total_env += 1; registrar_sinal(fid, "OVERGOAL", h, a, mid)
-
+        # MERCADO 6: ESCANTEIO LIMITE FT (80-88 min, fav confirmado, empatando ou perdendo por 1, sem vermelho)
         if p == 2 and 80 <= m <= 88 and (fav_empatando or fav_perdendo_1) and red_fav == 0:
+            hoje = datetime.now(BRT).strftime('%Y%m%d')
             key = f"{fid}_cft_{hoje}"
-            cantos = stats.get("escanteios_h", 0) + stats.get("escanteios_a", 0)
-            if key not in sent:
-                mid = send_telegram(msg_universal(h, a, m, liga, n_crit, "CORNER_FT", "", placar, cantos_atual=cantos, stats=stats, sh=sh, sa=sa, fav_final=fav_final), marca=key, home=h, away=a)
-                if mid: sent.add(key); total_env += 1; registrar_sinal(fid, "CORNER_FT", h, a, mid, extra_val=cantos)
+            cantos_h = stats.get("escanteios_h", -1) if stats else -1
+            cantos_a = stats.get("escanteios_a", -1) if stats else -1
+            cantos = (max(0, cantos_h) + max(0, cantos_a)) if (cantos_h >= 0 and cantos_a >= 0) else -1
+            if cantos < 0:
+                print(f"[SKIP-CORNER-FT] {h} x {a} — escanteios sem dado real, pulando")
+            elif key not in sent:
+                mid = send_telegram(msg_universal(h, a, m, liga, 5, "CORNER_FT", "", placar, cantos_atual=cantos, stats=stats, sh=sh, sa=sa, fav_final=fav_final), marca=key, home=h, away=a)
+                if mid:
+                    sent.add(key); total_env += 1
+                    registrar_sinal(fid, "CORNER_FT", h, a, mid, extra_val=cantos)
 
     save_sent(sent)
-    print(f"[DONE] Enviados: {total_env}")
 
+    # Validação de resultados pendentes — lê e salva via GitHub
+    try:
+        sinais_p = _load_sinais_github()
+        rest = []
+        for s in sinais_p:
+            res = checar_resultado(s)
+            if res:
+                emoji = "🟢GREEN CONFIRMADO🟢" if res == "green" else "🔴RED CONFIRMADO🔴"
+                send_telegram(emoji, botoes=False, reply_to=s.get("message_id"))
+                salvar_resultado(res)
+            else:
+                rest.append(s)
+        _save_sinais_github(rest)
+        print(f"[SINAIS] {len(sinais_p) - len(rest)} resultados confirmados, {len(rest)} ainda pendentes")
+    except Exception as e:
+        print(f"[SINAIS] Erro validação: {e}")
 
-
+    print(f"Finalizado. Enviados: {total_env}")
 
 if __name__ == "__main__":
     run()
 
-
-def get_stats_espn(fid, home, away):
-    # Stub para evitar erro, a apifootball mestre já deve prover os dados
-    return {}
-
-def get_stats_bzzoiro(fid, home, away):
-    # Stub para evitar erro
-    return {}
