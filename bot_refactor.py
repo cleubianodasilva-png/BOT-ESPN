@@ -2112,16 +2112,13 @@ def processar_comandos_pendentes(token, chat_id):
                 text = msg.get("text", "")
                 sep = "━━━━━━━━━━━━━━━━━━━━"
                 if "/radar" in text:
-                    msg = f"{sep}\n📡 RADAR AO VIVO 📡\n{sep}\n🔴 Verificando jogos...\n{sep}"
-                    requests.post(f"https://api.telegram.org/bot{token}/sendMessage", json={"chat_id": chat_id, "text": msg, "parse_mode": "HTML"})
+                    pass  # Radar sera respondido pelo processar_comandos_pendentes dentro do run()
                 elif "/relatorio" in text:
-                    msg = f"{sep}📊 RELATÓRIO DIÁRIO{sep}✅ Processando dados...{sep}"
-                    requests.post(f"https://api.telegram.org/bot{token}/sendMessage", json={"chat_id": chat_id, "text": msg, "parse_mode": "HTML"})
+                    pass
     except:
         pass
 
 
 
 if __name__ == "__main__":
-    processar_comandos_pendentes(TG_TOKEN, CHAT_ID)
     run()
