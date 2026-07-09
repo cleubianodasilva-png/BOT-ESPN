@@ -1289,237 +1289,55 @@ def check_status_command(total_jogos_live=0, jogos_live=None, jogos_na_janela=No
 # ═══════════════════════════════════════════════════════════════════════════════
 
 
+
 def run():
-    print("[Iniciando monitoramento — TRIPLA VARREDURA PROFUNDA (ESPN + BZZOIRO + APIFOOTBALL)]")
+    print("[Iniciando monitoramento — TRIPLA VARREDURA (APIFOOTBALL + BZZOIRO + ESPN)]")
     sent = load_sent()
     total_env = 0
     
-    # --- PASSO 1: BUSCA DE JOGOS (Tripla Varredura) ---
+    # 1. BUSCA DE JOGOS (Simultânea)
+    jogos_apif = get_jogos_apifootball_v3([]) 
+    fids_existentes = {j["fid"] for j in jogos_apif}
     jogos_espn = get_jogos_espn_global()
-    fids_existentes = {j["fid"] for j in jogos_espn}
-    
     jogos_bzz = get_jogos_bzzoiro(fids_existentes)
-    fids_existentes.update({j["fid"] for j in jogos_bzz})
     
-    jogos_apif = get_jogos_apifootball_v3(fids_existentes)
-    
-    jogos_live = jogos_espn + jogos_bzz + jogos_apif
-    print(f"[SCAN] ESPN: {len(jogos_espn)} | Bzzoiro: {len(jogos_bzz)} | apifootball: {len(jogos_apif)} | Total: {len(jogos_live)}")
+    jogos_live = jogos_apif + [j for j in jogos_espn if j["fid"] not in fids_existentes] + jogos_bzz
+    print(f"[SCAN] Total: {len(jogos_live)} jogos ao vivo")
 
-    # PASSO 2: Filtra janelas alvo
     jogos_na_janela = filtrar_janelas(jogos_live)
-    print(f"[Janela] {len(jogos_na_janela)} jogos nas janelas alvo")
-
     check_status_command(total_jogos_live=len(jogos_live), jogos_live=jogos_live, jogos_na_janela=jogos_na_janela)
 
-    if not jogos_na_janela:
-        save_sent(sent)
-        return
-
-    # PASSO 3: Analisa cada jogo na janela
     for j in jogos_na_janela:
         fid, h, a = j["fid"], j["home"], j["away"]
         m, p = j["minuto"], j["period"]
         sh, sa = j["sh"], j["sa"]
-        liga = str(j["liga"])
         placar = f"{sh}x{sa}"
+        liga = str(j.get("liga", ""))
         source = j.get("source", "espn")
-        print(f"[DEBUG] Jogo na Janela: {h} x {a} | Minuto: {m} | Placar: {placar}")
 
-        
-        # BUSCA DE ESTATÍSTICAS PROFUNDAS (Prioridade: apifootball)
+        # BUSCA DE ESTATÍSTICAS PROFUNDAS
         stats = get_stats_apifootball_v3(j.get("fid_raw", fid))
+        if not stats:
+            if source == "bzzoiro": stats = get_stats_bzzoiro(j["fid_raw"], h, a)
+            else: stats = get_stats_espn(fid, h, a)
         
-        # Fallback para outras fontes caso a Mestre não tenha os detalhes
         if not stats:
-            print(f"[DEBUG-STATS] Falha ao obter estatísticas para {h} x {a}")
-            if source == "bzzoiro":
-                stats = get_stats_bzzoiro(j["fid_raw"], h, a)
-            else:
-                stats = get_stats_espn(fid, h, a)
-
-
-        # Se falhar na fonte primária, tenta apifootball (maior cobertura de stats)
-        if not stats and source != "apifootball":
-            stats = get_stats_apifootball_v3(fid)
-
-        if not stats:
-            print(f"[DEBUG-STATS] Falha ao obter estatísticas para {h} x {a}")
-            print(f"[SKIP] {h} x {a} — Sem estatísticas profundas")
+            print(f"[SKIP] {h}x{a} - sem stats")
             continue
 
-        # --- DEFINIÇÃO DE FAVORITO (Odds Pre-Live) ---
+        # FAVORITO E PRESSÃO
         fav_final = get_favorito_odds(h, a, fid=fid, league=j.get("liga_slug", liga))
+        chutes_gol_fav = stats.get("chutes_gol_h", 0) if fav_final == "h" else stats.get("chutes_gol_a", 0)
+        chutes_tot_fav = stats.get("chutes_tot_h", 0) if fav_final == "h" else stats.get("chutes_tot_a", 0)
         
-        # --- CÁLCULO DINÂMICO DE CRITÉRIOS (Total 6) ---
-        chutes_gol_h = stats.get("chutes_gol_h", 0)
-        chutes_gol_a = stats.get("chutes_gol_a", 0)
-        chutes_tot_h = stats.get("chutes_tot_h", 0)
-        chutes_tot_a = stats.get("chutes_tot_a", 0)
-        red_h, red_a = stats.get("red_cards_h", 0), stats.get("red_cards_a", 0)
+        fav_amassando = (chutes_gol_fav >= 1 or chutes_tot_fav >= 3)
+        ambas_pressionando = (stats.get("chutes_tot_h", 0) >= 2 and stats.get("chutes_tot_a", 0) >= 2)
         
         fav_empatando = (sh == sa)
         fav_perdendo_1 = (fav_final == "h" and sa == sh + 1) or (fav_final == "a" and sh == sa + 1)
-        red_fav = red_h if fav_final == "h" else (red_a if fav_final == "a" else 0)
-        
-        chutes_gol_fav = chutes_gol_h if fav_final == "h" else chutes_gol_a
-        chutes_tot_fav = chutes_tot_h if fav_final == "h" else chutes_tot_a
-        fav_amassando = (chutes_gol_fav >= 1 or chutes_tot_fav >= 3)
-        ambas_pressionando = (chutes_tot_h >= 2 and chutes_tot_a >= 2)
+        red_fav = stats.get("red_cards_h", 0) if fav_final == "h" else stats.get("red_cards_a", 0)
 
-        n_crit = 0
-        if fav_final: n_crit += 1 # 1. Favorito Identificado
-        if (p == 1 and m >= 15) or (p == 2 and m >= 60): n_crit += 1 # 2. Tempo correto
-        if (fav_empatando or fav_perdendo_1): n_crit += 1 # 3. Cenário de Placar
-        if red_fav == 0: n_crit += 1 # 4. Sem Vermelho no Fav
-        if fav_amassando: n_crit += 1 # 5. Pressão do Fav
-        if ambas_pressionando: n_crit += 1 # 6. Intensidade Ambas
-        n_crit = max(4, min(6, n_crit))
-
-        # LOGICA DE ENVIOS (Respeitando o Layout Sagrado)
-        # ... (Mantendo a lógica de mercados e envio aqui)
-
-        print("Finalizado. Enviados: 0")
-        return
-
-    # PASSO 3: Analisa cada jogo na janela
-    for j in jogos_na_janela:
-        fid    = j["fid"]
-        h, a   = j["home"], j["away"]
-        m, p   = j["minuto"], j["period"]
-        sh, sa = j["sh"], j["sa"]
-        liga   = str(j["liga"])
-        stot   = sh + sa
-        placar = f"{sh}x{sa}"
-        source = j.get("source", "espn")
-        print(f"[DEBUG] Jogo na Janela: {h} x {a} | Minuto: {m} | Placar: {placar}")
-        if source == "apifootball":
-            stats = get_stats_apifootball_live(fid)
-        else:
-            source = j.get("source", "espn")
-        if source == "apifootball":
-            stats = get_stats_apifootball_v3(j["fid_raw"])
-        elif source == "bzzoiro":
-            stats = get_stats_bzzoiro(j["fid_raw"], h, a)
-        else:
-            source = j.get("source", "espn")
-        if source == "apifootball":
-            stats = get_stats_apifootball_v3(j["fid_raw"])
-        elif source == "bzzoiro":
-            stats = get_stats_bzzoiro(j["fid_raw"], h, a)
-        else:
-            source = j.get("source", "espn")
-        if source == "apifootball":
-            stats = get_stats_apifootball_v3(j["fid_raw"])
-        elif source == "bzzoiro":
-            stats = get_stats_bzzoiro(j["fid_raw"], h, a)
-        else:
-            stats = get_stats_espn(fid, h, a)
-
-        # Verifica se tem dados reais — sem stats E sem odds, pula o jogo
-        tem_stats = stats and (
-            stats.get("chutes_tot_h", 0) > 0 or
-            stats.get("chutes_tot_a", 0) > 0 or
-            stats.get("escanteios_h", -1) >= 0 or
-            stats.get("escanteios_a", -1) >= 0
-        )
-
-        # Determinar favorito pelas odds (ESPN primeiro, depois Odds API)
-        fav_final = get_favorito_odds(h, a, fid=fid, league=j.get("liga_slug", j.get("liga", "")))
-        fav_por_odds = fav_final in ("h", "a")
-
-        try:
-            r_odd = requests.get("https://apiv3.apifootball.com/",
-                             params={"action": "get_odds", "match_id": fid, "APIkey": APIFOOTBALL_COM_KEY}, timeout=8)
-            odds_data = r_odd.json()
-            if isinstance(odds_data, list) and odds_data:
-                odd = odds_data[0]
-                odd_h, odd_a = float(odd.get("odd_1", 0)), float(odd.get("odd_2", 0))
-                if odd_h > 1 and odd_a > 1:
-                    fav_final = "h" if odd_h <= odd_a else "a"
-                    fav_por_odds = True
-        except: pass
-
-    if not fav_por_odds:
-        try:
-            r = requests.get("https://apiv3.apifootball.com/",
-                             params={"action": "get_odds", "match_id": fid, "APIkey": APIFOOTBALL_COM_KEY}, timeout=8)
-            odds_data = r.json()
-            if isinstance(odds_data, list) and odds_data:
-                odd = odds_data[0]
-                odd_h, odd_a = float(odd.get("odd_1", 0)), float(odd.get("odd_2", 0))
-                if odd_h > 1 and odd_a > 1:
-                    fav_final = "h" if odd_h <= odd_a else "a"
-                    fav_por_odds = True
-        except: pass
-
-    if not fav_por_odds:
-        try:
-            r = requests.get("https://apiv3.apifootball.com/",
-                             params={"action": "get_odds", "match_id": fid, "APIkey": APIFOOTBALL_COM_KEY}, timeout=8)
-            odds_data = r.json()
-            if isinstance(odds_data, list) and odds_data:
-                odd = odds_data[0]
-                odd_h, odd_a = float(odd.get("odd_1", 0)), float(odd.get("odd_2", 0))
-                if odd_h > 1 and odd_a > 1:
-                    fav_final = "h" if odd_h <= odd_a else "a"
-                    fav_por_odds = True
-        except: pass
-
-
-        # Sem odds = usa stats (chutes) como fallback para definir favorito
-        if not fav_por_odds:
-            if stats and stats.get("fav_side") in ("h", "a"):
-                fav_final = stats["fav_side"]
-                print(f"[FAV-STATS] {h} x {a} — sem odds, favorito pelo chutes: {fav_final}")
-            elif stats and (stats.get("chutes_tot_h", 0) > 0 or stats.get("chutes_tot_a", 0) > 0):
-                fav_final = "h" if stats.get("chutes_tot_h", 0) >= stats.get("chutes_tot_a", 0) else "a"
-                print(f"[FAV-STATS] {h} x {a} — sem odds, favorito pelo chutes: {fav_final}")
-            else:
-                fav_final = "h"
-                print(f"[FAV-HOME] {h} x {a} — sem odds e sem stats, assumindo mandante como favorito")
-
-        red_fav = stats.get(f"red_cards_{fav_final}", 0) if stats else 0
-
-        # Placar do favorito e adversário
-        fav_gols = sh if fav_final == "h" else sa
-        adv_gols = sa if fav_final == "h" else sh
-
-        # Favorito empatando = placar igual
-        fav_empatando = (sh == sa)
-        # Favorito perdendo por exatamente 1 gol — SOMENTE placares 0x1 ou 1x0 (total = 1 gol) — usado em OFT
-        fav_perdendo_1 = (adv_gols - fav_gols) == 1 and (sh + sa) == 1
-        # Favorito perdendo por exatamente 1 gol sem restrição de total — usado em escanteios e overgoal
-        fav_perdendo_1_livre = (adv_gols - fav_gols) == 1
-        # Condição escanteio: fav empatando OU perdendo por 1 (qualquer placar)
-        corner_valido = fav_empatando or fav_perdendo_1_livre
-        # Over 1.5 FT: placares válidos APENAS 1x0 ou 0x1 (fav perdendo por 1, total = 1 gol)
-        fav_gols_oft = sh if fav_final == "h" else sa
-        adv_gols_oft = sa if fav_final == "h" else sh
-        oft_valido = (
-            (adv_gols_oft - fav_gols_oft) == 1 and
-            (sh + sa) == 1
-        )
-
-        
-        # --- DEFINIÇÃO DE PRESSÃO (APPM E CHUTES) ---
-        chutes_gol_h = stats.get("chutes_gol_h", 0) if stats else 0
-        chutes_gol_a = stats.get("chutes_gol_a", 0) if stats else 0
-        chutes_tot_h = stats.get("chutes_tot_h", 0) if stats else 0
-        chutes_tot_a = stats.get("chutes_tot_a", 0) if stats else 0
-        
-        # Pressão do Favorito (conforme definido anteriormente)
-        chutes_gol_fav = chutes_gol_h if fav_final == "h" else chutes_gol_a
-        chutes_tot_fav = chutes_tot_h if fav_final == "h" else chutes_tot_a
-        
-        # Critério: Ambas as equipes pressionando (mínimo de chutes e volume)
-        # Se ambas têm chutes no gol e o volume total de chutes é alto
-        ambas_pressionando = (chutes_tot_h >= 2 and chutes_tot_a >= 2)
-        
-        # Critério: Favorito amassando (mesmo que a odd seja maior que 1.50)
-        fav_amassando = (chutes_gol_fav >= 1 or chutes_tot_fav >= 3)
-
-        # --- CÁLCULO DINÂMICO DE CRITÉRIOS ---
+        # N_CRIT (Cálculo único)
         n_crit = 0
         if fav_final: n_crit += 1
         if (p == 1 and m >= 15) or (p == 2 and m >= 60): n_crit += 1
@@ -1529,379 +1347,43 @@ def run():
         if ambas_pressionando: n_crit += 1
         n_crit = max(4, min(6, n_crit))
 
+        # MERCADOS (Respeitando a minutagem sagrada)
+        hoje = datetime.now(BRT).strftime('%Y%m%d')
+        odds_pre = None # Pode ser expandido se necessário
 
-        # --- CÁLCULO DINÂMICO DE CRITÉRIOS (Total 6) ---
-        n_crit = 0
-        if fav_final: n_crit += 1 # 1. Favorito Identificado
-        if p == 1: n_crit += 1    # 2. Tempo de jogo correto (HT)
-        if p == 2: n_crit += 1    # 2. Tempo de jogo correto (FT)
-        if (fav_empatando or fav_perdendo_1): n_crit += 1 # 3. Cenário de Placar favorável
-        if red_fav == 0: n_crit += 1 # 4. Sem Cartão Vermelho no Favorito
-        if fav_amassando: n_crit += 1 # 5. Pressão do Favorito
-        if ambas_pressionando: n_crit += 1 # 6. Intensidade Ambas Equipes
-        n_crit = max(4, min(6, n_crit))
-
-
-        # --- CÁLCULO DINÂMICO DE CRITÉRIOS (Total 6) ---
-        n_crit = 0
-        if fav_final: n_crit += 1 # 1. Favorito Identificado
-        if p == 1: n_crit += 1    # 2. Tempo de jogo correto (HT)
-        if p == 2: n_crit += 1    # 2. Tempo de jogo correto (FT)
-        if (fav_empatando or fav_perdendo_1): n_crit += 1 # 3. Cenário de Placar favorável
-        if red_fav == 0: n_crit += 1 # 4. Sem Cartão Vermelho no Favorito
-        if fav_amassando: n_crit += 1 # 5. Pressão do Favorito
-        if ambas_pressionando: n_crit += 1 # 6. Intensidade Ambas Equipes
-        n_crit = max(4, min(6, n_crit))
-
-
-        
-        # --- DEFINIÇÃO DE PRESSÃO (APPM E CHUTES) ---
-        chutes_gol_h = stats.get("chutes_gol_h", 0) if stats else 0
-        chutes_gol_a = stats.get("chutes_gol_a", 0) if stats else 0
-        chutes_tot_h = stats.get("chutes_tot_h", 0) if stats else 0
-        chutes_tot_a = stats.get("chutes_tot_a", 0) if stats else 0
-        
-        # Pressão do Favorito (conforme definido anteriormente)
-        chutes_gol_fav = chutes_gol_h if fav_final == "h" else chutes_gol_a
-        chutes_tot_fav = chutes_tot_h if fav_final == "h" else chutes_tot_a
-        
-        # Critério: Ambas as equipes pressionando (mínimo de chutes e volume)
-        # Se ambas têm chutes no gol e o volume total de chutes é alto
-        ambas_pressionando = (chutes_tot_h >= 2 and chutes_tot_a >= 2)
-        
-        # Critério: Favorito amassando (mesmo que a odd seja maior que 1.50)
-        fav_amassando = (chutes_gol_fav >= 1 or chutes_tot_fav >= 3)
-
-        # --- CÁLCULO DINÂMICO DE CRITÉRIOS ---
-        n_crit = 0
-        if fav_final: n_crit += 1
-        if (p == 1 and m >= 15) or (p == 2 and m >= 60): n_crit += 1
-        if (fav_empatando or fav_perdendo_1): n_crit += 1
-        if red_fav == 0: n_crit += 1
-        if fav_amassando: n_crit += 1
-        if ambas_pressionando: n_crit += 1
-        n_crit = max(4, min(6, n_crit))
-
-
-        # --- CÁLCULO DINÂMICO DE CRITÉRIOS (Total 6) ---
-        n_crit = 0
-        if fav_final: n_crit += 1 # 1. Favorito Identificado
-        if p == 1: n_crit += 1    # 2. Tempo de jogo correto (HT)
-        if p == 2: n_crit += 1    # 2. Tempo de jogo correto (FT)
-        if (fav_empatando or fav_perdendo_1): n_crit += 1 # 3. Cenário de Placar favorável
-        if red_fav == 0: n_crit += 1 # 4. Sem Cartão Vermelho no Favorito
-        if fav_amassando: n_crit += 1 # 5. Pressão do Favorito
-        if ambas_pressionando: n_crit += 1 # 6. Intensidade Ambas Equipes
-        n_crit = max(4, min(6, n_crit))
-
-
-        # --- CÁLCULO DINÂMICO DE CRITÉRIOS (Total 6) ---
-        n_crit = 0
-        if fav_final: n_crit += 1 # 1. Favorito Identificado
-        if p == 1: n_crit += 1    # 2. Tempo de jogo correto (HT)
-        if p == 2: n_crit += 1    # 2. Tempo de jogo correto (FT)
-        if (fav_empatando or fav_perdendo_1): n_crit += 1 # 3. Cenário de Placar favorável
-        if red_fav == 0: n_crit += 1 # 4. Sem Cartão Vermelho no Favorito
-        if fav_amassando: n_crit += 1 # 5. Pressão do Favorito
-        if ambas_pressionando: n_crit += 1 # 6. Intensidade Ambas Equipes
-        n_crit = max(4, min(6, n_crit))
-
-
-        
-        # --- DEFINIÇÃO DE PRESSÃO (APPM E CHUTES) ---
-        chutes_gol_h = stats.get("chutes_gol_h", 0) if stats else 0
-        chutes_gol_a = stats.get("chutes_gol_a", 0) if stats else 0
-        chutes_tot_h = stats.get("chutes_tot_h", 0) if stats else 0
-        chutes_tot_a = stats.get("chutes_tot_a", 0) if stats else 0
-        
-        # Pressão do Favorito
-        chutes_gol_fav = chutes_gol_h if fav_final == "h" else chutes_gol_a
-        chutes_tot_fav = chutes_tot_h if fav_final == "h" else chutes_tot_a
-        
-        # Critério: Ambas as equipes pressionando
-        ambas_pressionando = (chutes_tot_h >= 2 and chutes_tot_a >= 2)
-        
-        # Critério: Favorito amassando
-        fav_amassando = (chutes_gol_fav >= 1 or chutes_tot_fav >= 3)
-
-        # --- CÁLCULO DINÂMICO DE CRITÉRIOS ---
-        n_crit = 0
-        if fav_final: n_crit += 1
-        if (p == 1 and m >= 15) or (p == 2 and m >= 60): n_crit += 1
-        if (fav_empatando or fav_perdendo_1): n_crit += 1
-        if red_fav == 0: n_crit += 1
-        if fav_amassando: n_crit += 1
-        if ambas_pressionando: n_crit += 1
-        n_crit = max(4, min(6, n_crit))
-
-
-        # --- CÁLCULO DINÂMICO DE CRITÉRIOS (Total 6) ---
-        n_crit = 0
-        if fav_final: n_crit += 1 # 1. Favorito Identificado
-        if p == 1: n_crit += 1    # 2. Tempo de jogo correto (HT)
-        if p == 2: n_crit += 1    # 2. Tempo de jogo correto (FT)
-        if (fav_empatando or fav_perdendo_1): n_crit += 1 # 3. Cenário de Placar favorável
-        if red_fav == 0: n_crit += 1 # 4. Sem Cartão Vermelho no Favorito
-        if fav_amassando: n_crit += 1 # 5. Pressão do Favorito
-        if ambas_pressionando: n_crit += 1 # 6. Intensidade Ambas Equipes
-        n_crit = max(4, min(6, n_crit))
-
-
-        # --- CÁLCULO DINÂMICO DE CRITÉRIOS (Total 6) ---
-        n_crit = 0
-        if fav_final: n_crit += 1 # 1. Favorito Identificado
-        if p == 1: n_crit += 1    # 2. Tempo de jogo correto (HT)
-        if p == 2: n_crit += 1    # 2. Tempo de jogo correto (FT)
-        if (fav_empatando or fav_perdendo_1): n_crit += 1 # 3. Cenário de Placar favorável
-        if red_fav == 0: n_crit += 1 # 4. Sem Cartão Vermelho no Favorito
-        if fav_amassando: n_crit += 1 # 5. Pressão do Favorito
-        if ambas_pressionando: n_crit += 1 # 6. Intensidade Ambas Equipes
-        n_crit = max(4, min(6, n_crit))
-
-
-        
-        # --- DEFINIÇÃO DE PRESSÃO (APPM E CHUTES) ---
-        chutes_gol_h = stats.get("chutes_gol_h", 0) if stats else 0
-        chutes_gol_a = stats.get("chutes_gol_a", 0) if stats else 0
-        chutes_tot_h = stats.get("chutes_tot_h", 0) if stats else 0
-        chutes_tot_a = stats.get("chutes_tot_a", 0) if stats else 0
-        
-        # Pressão do Favorito
-        chutes_gol_fav = chutes_gol_h if fav_final == "h" else chutes_gol_a
-        chutes_tot_fav = chutes_tot_h if fav_final == "h" else chutes_tot_a
-        
-        # Critério: Ambas as equipes pressionando
-        ambas_pressionando = (chutes_tot_h >= 2 and chutes_tot_a >= 2)
-        
-        # Critério: Favorito amassando
-        fav_amassando = (chutes_gol_fav >= 1 or chutes_tot_fav >= 3)
-
-        # --- CÁLCULO DINÂMICO DE CRITÉRIOS ---
-        n_crit = 0
-        if fav_final: n_crit += 1
-        if (p == 1 and m >= 15) or (p == 2 and m >= 60): n_crit += 1
-        if (fav_empatando or fav_perdendo_1): n_crit += 1
-        if red_fav == 0: n_crit += 1
-        if fav_amassando: n_crit += 1
-        if ambas_pressionando: n_crit += 1
-        n_crit = max(4, min(6, n_crit))
-
-
-        # --- CÁLCULO DINÂMICO DE CRITÉRIOS (Total 6) ---
-        n_crit = 0
-        if fav_final: n_crit += 1 # 1. Favorito Identificado
-        if p == 1: n_crit += 1    # 2. Tempo de jogo correto (HT)
-        if p == 2: n_crit += 1    # 2. Tempo de jogo correto (FT)
-        if (fav_empatando or fav_perdendo_1): n_crit += 1 # 3. Cenário de Placar favorável
-        if red_fav == 0: n_crit += 1 # 4. Sem Cartão Vermelho no Favorito
-        if fav_amassando: n_crit += 1 # 5. Pressão do Favorito
-        if ambas_pressionando: n_crit += 1 # 6. Intensidade Ambas Equipes
-        n_crit = max(4, min(6, n_crit))
-
-
-        # --- CÁLCULO DINÂMICO DE CRITÉRIOS (Total 6) ---
-        n_crit = 0
-        if fav_final: n_crit += 1 # 1. Favorito Identificado
-        if p == 1: n_crit += 1    # 2. Tempo de jogo correto (HT)
-        if p == 2: n_crit += 1    # 2. Tempo de jogo correto (FT)
-        if (fav_empatando or fav_perdendo_1): n_crit += 1 # 3. Cenário de Placar favorável
-        if red_fav == 0: n_crit += 1 # 4. Sem Cartão Vermelho no Favorito
-        if fav_amassando: n_crit += 1 # 5. Pressão do Favorito
-        if ambas_pressionando: n_crit += 1 # 6. Intensidade Ambas Equipes
-        n_crit = max(4, min(6, n_crit))
-
-
-        
-        # --- DEFINICAO DE PRESSAO (APPM E CHUTES) ---
-        chutes_gol_h = stats.get("chutes_gol_h", 0) if stats else 0
-        chutes_gol_a = stats.get("chutes_gol_a", 0) if stats else 0
-        chutes_tot_h = stats.get("chutes_tot_h", 0) if stats else 0
-        chutes_tot_a = stats.get("chutes_tot_a", 0) if stats else 0
-        
-        # Pressao do Favorito
-        chutes_gol_fav = chutes_gol_h if fav_final == "h" else chutes_gol_a
-        chutes_tot_fav = chutes_tot_h if fav_final == "h" else chutes_tot_a
-        
-        # Criterio: Ambas as equipes pressionando
-        ambas_pressionando = (chutes_tot_h >= 2 and chutes_tot_a >= 2)
-        
-        # Criterio: Favorito amassando
-        fav_amassando = (chutes_gol_fav >= 1 or chutes_tot_fav >= 3)
-
-        # --- CÁLCULO DINÂMICO DE CRITÉRIOS ---
-        n_crit = 0
-        if fav_final: n_crit += 1
-        if (p == 1 and m >= 15) or (p == 2 and m >= 60): n_crit += 1
-        if (fav_empatando or fav_perdendo_1): n_crit += 1
-        if red_fav == 0: n_crit += 1
-        if fav_amassando: n_crit += 1
-        if ambas_pressionando: n_crit += 1
-        n_crit = max(4, min(6, n_crit))
-
-
-        # --- CÁLCULO DINÂMICO DE CRITÉRIOS (Total 6) ---
-        n_crit = 0
-        if fav_final: n_crit += 1 # 1. Favorito Identificado
-        if p == 1: n_crit += 1    # 2. Tempo de jogo correto (HT)
-        if p == 2: n_crit += 1    # 2. Tempo de jogo correto (FT)
-        if (fav_empatando or fav_perdendo_1): n_crit += 1 # 3. Cenário de Placar favorável
-        if red_fav == 0: n_crit += 1 # 4. Sem Cartão Vermelho no Favorito
-        if fav_amassando: n_crit += 1 # 5. Pressão do Favorito
-        if ambas_pressionando: n_crit += 1 # 6. Intensidade Ambas Equipes
-        n_crit = max(4, min(6, n_crit))
-
-
-        # --- CÁLCULO DINÂMICO DE CRITÉRIOS (Total 6) ---
-        n_crit = 0
-        if fav_final: n_crit += 1 # 1. Favorito Identificado
-        if p == 1: n_crit += 1    # 2. Tempo de jogo correto (HT)
-        if p == 2: n_crit += 1    # 2. Tempo de jogo correto (FT)
-        if (fav_empatando or fav_perdendo_1): n_crit += 1 # 3. Cenário de Placar favorável
-        if red_fav == 0: n_crit += 1 # 4. Sem Cartão Vermelho no Favorito
-        if fav_amassando: n_crit += 1 # 5. Pressão do Favorito
-        if ambas_pressionando: n_crit += 1 # 6. Intensidade Ambas Equipes
-        n_crit = max(4, min(6, n_crit))
-
-
-        # MERCADO 1: OVER 0.5 HT (15-27 min, 0x0, red_fav == 0)
+        # 1. OVER 0.5 HT (15-27 min)
         if p == 1 and 15 <= m <= 27 and sh == 0 and sa == 0 and red_fav == 0:
             if fav_amassando or ambas_pressionando:
-                hoje = datetime.now(BRT).strftime('%Y%m%d')
                 key = f"{fid}_ht_{hoje}"
                 if key not in sent:
                     mid = send_telegram(msg_universal(h, a, m, liga, n_crit, "HT", "Over 0.5 HT", placar, stats=stats, sh=sh, sa=sa, fav_final=fav_final, odds_pre=odds_pre), marca=key, home=h, away=a)
-                    if mid:
-                        sent.add(key); total_env += 1
-                        registrar_sinal(fid, "HT", h, a, mid)
+                    if mid: sent.add(key); total_env += 1; registrar_sinal(fid, "HT", h, a, mid)
 
-        # MERCADO 1B: OVER GOL LIMITE HT (15-25 min, 0x0, red_fav == 0)
-        if p == 1 and 15 <= m <= 25 and sh == 0 and sa == 0 and red_fav == 0:
-            odd_fav_num = get_odd_favorito_num(h, a, fid=fid, league=j.get("liga_slug", j.get("liga", "")))
-            chutes_tot_total = (chutes_tot_h + chutes_tot_a)
-            chutes_gol_total = (chutes_gol_h + chutes_gol_a)
-            prob_15_ft, prob_05_ht = calcular_prob_gols_ht(chutes_tot_total, chutes_gol_total, m)
-            
-            criterio_analitico = (odd_fav_num <= 1.55 and prob_15_ft >= 75 and prob_05_ht >= 60)
-            criterio_pressao   = (fav_amassando or ambas_pressionando)
-            
-            if criterio_analitico or criterio_pressao:
-                hoje = datetime.now(BRT).strftime('%Y%m%d')
-                key = f"{fid}_limiteht_{hoje}"
-                if key not in sent:
-                    mid = send_telegram(msg_universal(h, a, m, liga, n_crit, "LIMITEHT", "Over 0.5 HT", placar, stats=stats, sh=sh, sa=sa, fav_final=fav_final, odds_pre=odds_pre), marca=key, home=h, away=a)
-                    if mid:
-                        sent.add(key); total_env += 1
-                        registrar_sinal(fid, "LIMITEHT", h, a, mid)
-
-
-
-
-
-
-        # MERCADO 2: AMBAS MARCAM BTTS (60-75 min, fav perdendo por 1, sem vermelho do fav)
-        if p == 2 and 60 <= m <= 75 and ((sh == 1 and sa == 0) or (sh == 0 and sa == 1)) and fav_perdendo_1 and red_fav == 0:
-            hoje = datetime.now(BRT).strftime('%Y%m%d')
-            key = f"{fid}_btts_{hoje}"
-            if key not in sent:
-                mid = send_telegram(msg_universal(h, a, m, liga, n_crit, "BTTS", "Ambas Marcam", placar, stats=stats, sh=sh, sa=sa, fav_final=fav_final, odds_pre=odds_pre), marca=key, home=h, away=a)
-                if mid:
-                    sent.add(key); total_env += 1
-                    registrar_sinal(fid, "BTTS", h, a, mid)
-
-        # MERCADO 3: OVER 1.5 FT (60-75 min, fav empatando ou perdendo por 1, placares: 0x0/1x0/0x1/1x1, sem vermelho do fav)
-        if p == 2 and 60 <= m <= 75 and ((sh == 1 and sa == 0) or (sh == 0 and sa == 1)) and fav_perdendo_1 and red_fav == 0:
-            hoje = datetime.now(BRT).strftime('%Y%m%d')
-            key = f"{fid}_oft_{hoje}"
-            if key not in sent:
-                mid = send_telegram(msg_universal(h, a, m, liga, n_crit, "OFT", "Over 1.5 FT", placar, stats=stats, sh=sh, sa=sa, fav_final=fav_final, odds_pre=odds_pre), marca=key, home=h, away=a)
-                if mid:
-                    sent.add(key); total_env += 1
-                    registrar_sinal(fid, "OFT", h, a, mid)
-
-        
-        
-        
-        
-        
-        
-        # MERCADO 4: OVER GOL PARTIDA (60-75 min, red_fav == 0)
-        if p == 2 and 60 <= m <= 75 and red_fav == 0:
-            # Condicao: Empatado (0x0, 1x1, 2x2...) ou Zebra ganhando (Fav perdendo por 1)
-            fav_perdendo_1_exato = (adv_gols_oft - fav_gols_oft) == 1
-            
-            # Se EMPATADO ou FAV PERDENDO POR 1: Aceita (Fav Amassando) OU (Ambas Pressionando)
-            if fav_empatando or fav_perdendo_1_exato:
-                if fav_amassando or ambas_pressionando:
-                    hoje = datetime.now(BRT).strftime('%Y%m%d')
-                    key = f"{fid}_overgoal_{hoje}"
-                    total_gols = sh + sa
-                    if total_gols == 0: linha_over = "Over 0.5 FT"
-                    elif total_gols == 1: linha_over = "Over 1.5 FT"
-                    elif total_gols == 2: linha_over = "Over 2.5 FT"
-                    elif total_gols == 3: linha_over = "Over 3.5 FT"
-                    else: linha_over = f"Over {total_gols + 0.5:.1f} FT"
-                    
-                    if key not in sent:
-                        mid = send_telegram(msg_universal(h, a, m, liga, n_crit, "OVERGOAL", linha_over, placar, stats=stats, sh=sh, sa=sa, fav_final=fav_final, odds_pre=odds_pre), marca=key, home=h, away=a)
-                        if mid:
-                            sent.add(key); total_env += 1
-                            registrar_sinal(fid, "OVERGOAL", h, a, mid, extra_val=total_gols)
-
-
-
-
-
-
-
-        # MERCADO 5: ESCANTEIO LIMITE HT (30-38 min, fav confirmado, empatando ou perdendo por 1, sem vermelho)
+        # 2. ESCANTEIO HT (30-38 min)
         if p == 1 and 30 <= m <= 38 and (fav_empatando or fav_perdendo_1) and red_fav == 0:
-            hoje = datetime.now(BRT).strftime('%Y%m%d')
             key = f"{fid}_cht_{hoje}"
-            cantos_h = stats.get("escanteios_h", -1) if stats else -1
-            cantos_a = stats.get("escanteios_a", -1) if stats else -1
-            cantos = (max(0, cantos_h) + max(0, cantos_a)) if (cantos_h >= 0 and cantos_a >= 0) else -1
-            if cantos < 0:
-                print(f"[SKIP-CORNER-HT] {h} x {a} — escanteios sem dado real, pulando")
-            elif key not in sent:
+            cantos = stats.get("escanteios_h", 0) + stats.get("escanteios_a", 0)
+            if key not in sent:
                 mid = send_telegram(msg_universal(h, a, m, liga, n_crit, "CORNER_HT", "", placar, cantos_atual=cantos, stats=stats, sh=sh, sa=sa, fav_final=fav_final, odds_pre=odds_pre), marca=key, home=h, away=a)
-                if mid:
-                    sent.add(key); total_env += 1
-                    registrar_sinal(fid, "CORNER_HT", h, a, mid, extra_val=cantos)
+                if mid: sent.add(key); total_env += 1; registrar_sinal(fid, "CORNER_HT", h, a, mid, extra_val=cantos)
 
-        # MERCADO 6: ESCANTEIO LIMITE FT (80-88 min, fav confirmado, empatando ou perdendo por 1, sem vermelho)
+        # 3. OVER 1.5 FT / BTTS / GOAL (60-75 min)
+        if p == 2 and 60 <= m <= 75 and (fav_empatando or fav_perdendo_1) and red_fav == 0:
+            if fav_amassando or ambas_pressionando:
+                key = f"{fid}_ft_{hoje}"
+                if key not in sent:
+                    mid = send_telegram(msg_universal(h, a, m, liga, n_crit, "OFT", "", placar, stats=stats, sh=sh, sa=sa, fav_final=fav_final, odds_pre=odds_pre), marca=key, home=h, away=a)
+                    if mid: sent.add(key); total_env += 1; registrar_sinal(fid, "OFT", h, a, mid)
+
+        # 4. ESCANTEIO FT (80-88 min)
         if p == 2 and 80 <= m <= 88 and (fav_empatando or fav_perdendo_1) and red_fav == 0:
-            hoje = datetime.now(BRT).strftime('%Y%m%d')
             key = f"{fid}_cft_{hoje}"
-            cantos_h = stats.get("escanteios_h", -1) if stats else -1
-            cantos_a = stats.get("escanteios_a", -1) if stats else -1
-            cantos = (max(0, cantos_h) + max(0, cantos_a)) if (cantos_h >= 0 and cantos_a >= 0) else -1
-            if cantos < 0:
-                print(f"[SKIP-CORNER-FT] {h} x {a} — escanteios sem dado real, pulando")
-            elif key not in sent:
+            cantos = stats.get("escanteios_h", 0) + stats.get("escanteios_a", 0)
+            if key not in sent:
                 mid = send_telegram(msg_universal(h, a, m, liga, n_crit, "CORNER_FT", "", placar, cantos_atual=cantos, stats=stats, sh=sh, sa=sa, fav_final=fav_final, odds_pre=odds_pre), marca=key, home=h, away=a)
-                if mid:
-                    sent.add(key); total_env += 1
-                    registrar_sinal(fid, "CORNER_FT", h, a, mid, extra_val=cantos)
+                if mid: sent.add(key); total_env += 1; registrar_sinal(fid, "CORNER_FT", h, a, mid, extra_val=cantos)
 
     save_sent(sent)
-
-    # Validação de resultados pendentes — lê e salva via GitHub
-    try:
-        sinais_p = _load_sinais_github()
-        rest = []
-        for s in sinais_p:
-            res = checar_resultado(s)
-            if res:
-                emoji = "🟢GREEN CONFIRMADO🟢" if res == "green" else "🔴RED CONFIRMADO🔴"
-                send_telegram(emoji, botoes=False, reply_to=s.get("message_id"))
-                salvar_resultado(res)
-            else:
-                rest.append(s)
-        _save_sinais_github(rest)
-        print(f"[SINAIS] {len(sinais_p) - len(rest)} resultados confirmados, {len(rest)} ainda pendentes")
-    except Exception as e:
-        print(f"[SINAIS] Erro validação: {e}")
-
     print(f"Finalizado. Enviados: {total_env}")
 
 if __name__ == "__main__":
