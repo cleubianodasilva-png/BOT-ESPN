@@ -1957,9 +1957,7 @@ def run():
         # Verifica se tem dados reais — sem stats E sem odds, pula o jogo
         tem_stats = stats and (
             stats.get("chutes_tot_h", 0) > 0 or
-            stats.get("chutes_tot_a", 0) > 0 or
-            stats.get("escanteios_h", -1) >= 0 or
-            stats.get("escanteios_a", -1) >= 0
+            stats.get("chutes_tot_a", 0) > 0
         )
 
         # Determinar favorito pelas odds (ESPN primeiro, depois Odds API)
@@ -2102,8 +2100,8 @@ def run():
             cantos_h = stats.get("escanteios_h", -1) if stats else -1
             cantos_a = stats.get("escanteios_a", -1) if stats else -1
             cantos = (max(0, cantos_h) + max(0, cantos_a)) if (cantos_h >= 0 and cantos_a >= 0) else -1
-            if cantos < 0:
-                print(f"[SKIP-CORNER-HT] {h} x {a} — escanteios sem dado real, pulando")
+            if cantos < 0 or (cantos == 0 and stats.get("chutes_tot_h",0) + stats.get("chutes_tot_a",0) == 0):
+                print(f"[SKIP-CORNER-HT] {h} x {a} — cantos={cantos} sem chutes")
             elif key not in sent:
                 mid = send_telegram(msg_universal(h, a, m, liga, 5, "CORNER_HT", "", placar, cantos_atual=cantos, stats=stats, sh=sh, sa=sa, fav_final=fav_final), marca=key, home=h, away=a)
                 if mid:
@@ -2117,8 +2115,8 @@ def run():
             cantos_h = stats.get("escanteios_h", -1) if stats else -1
             cantos_a = stats.get("escanteios_a", -1) if stats else -1
             cantos = (max(0, cantos_h) + max(0, cantos_a)) if (cantos_h >= 0 and cantos_a >= 0) else -1
-            if cantos < 0:
-                print(f"[SKIP-CORNER-FT] {h} x {a} — escanteios sem dado real, pulando")
+            if cantos < 0 or (cantos == 0 and stats.get("chutes_tot_h",0) + stats.get("chutes_tot_a",0) == 0):
+                print(f"[SKIP-CORNER-FT] {h} x {a} — cantos={cantos} sem chutes")
             elif key not in sent:
                 mid = send_telegram(msg_universal(h, a, m, liga, 5, "CORNER_FT", "", placar, cantos_atual=cantos, stats=stats, sh=sh, sa=sa, fav_final=fav_final), marca=key, home=h, away=a)
                 if mid:
