@@ -915,46 +915,30 @@ def get_stats_apifootball_v3(match_id):
 # ═══════════════════════════════════════════════════════════════════════════════
 
 
+
 def get_odd_favorito_num(home, away, fid=None, league=None):
-    """Retorna 'h' ou 'a'. Tenta APIFOOTBALL V3, depois ESPN Geral."""
-    # 1. APIFOOTBALL V3
-    if fid and str(fid).isdigit():
-        try:
-            url = f"https://apiv3.apifootball.com/?action=get_odds&match_id={fid}&APIkey={APIFOOTBALL_KEY}"
-            r = requests.get(url, timeout=5)
-            data = r.json()
-            if isinstance(data, list) and len(data) > 0:
-                o = data[0].get("odds", {}).get("1x2", []) or data[0].get("odd_1x2", [])
-                if o:
-                    oh, oa = float(o[0].get("home", 99)), float(o[0].get("away", 99))
-                    if oh < oa: return "h"
-                    if oa < oh: return "a"
-        except: pass
-
-    # 2. ESPN - Busca no scoreboard geral se a liga for desconhecida
-    ligas_teste = [league, "arg.1", "bra.1", "bra.2", "libertadores", "sudamericana", "usa.1"]
-    for l in [lg for lg in ligas_teste if lg]:
-        try:
-            url = f"https://site.api.espn.com/apis/site/v2/sports/soccer/{l}/scoreboard"
-            r = requests.get(url, timeout=5)
-            for ev in r.json().get("events", []):
-                nom_h = ev["competitions"][0]["competitors"][0]["team"]["name"].lower()
-                nom_a = ev["competitions"][0]["competitors"][1]["team"]["name"].lower()
-                if home.lower() in nom_h or away.lower() in nom_a or home.lower() in nom_a or away.lower() in nom_h:
-                    for odd in ev["competitions"][0].get("odds", []):
-                        ml = odd.get("moneyline", {})
-                        if ml:
-                            oh, oa = float(ml.get("home", {}).get("odds", 0)), float(ml.get("away", {}).get("odds", 0))
-                            if oh != 0 and oa != 0:
-                                return "h" if oh < oa else "a"
-        except: pass
-
-    # 3. IDENTIFICAÇÃO POR NOME (Último Recurso para não ficar sem sinal)
-    # Se o Boca Juniors está jogando em casa contra o Athletico-PR e não temos odds,
-    # em muitos casos de Live, o favorito é o time da casa ou o de maior expressão.
-    # Mas para ser seguro, vamos retornar None e logar.
-    print(f"  [ODDS-WARN] Sem odds para {home} x {away}")
+    """Retorna 'h' ou 'a'. Busca odds por evento e nome."""
+    # Tenta apifootball v3 (Mestre)
+    try:
+        hoje = datetime.now(BRT).strftime('%Y-%m-%d')
+        url = f"https://apiv3.apifootball.com/?action=get_odds&from={hoje}&to={hoje}&APIkey={APIFOOTBALL_KEY}"
+        r = requests.get(url, timeout=10)
+        data = r.json()
+        if isinstance(data, list):
+            for o in data:
+                nom_h = str(o.get("match_hometeam_name", "")).lower()
+                nom_a = str(o.get("match_awayteam_name", "")).lower()
+                if home.lower() in nom_h or away.lower() in nom_a:
+                    mkt = o.get("odds", {}).get("1x2", []) or o.get("odd_1x2", [])
+                    if mkt:
+                        oh, oa = float(mkt[0].get("home", 99)), float(mkt[0].get("away", 99))
+                        return "h" if oh < oa else "a"
+    except: pass
+    
+    # Se falhar, e for jogo de expressão, vamos tentar um "Favorito Estimado" 
+    # apenas para logs, mas retornar None para cumprir a regra do Cleubiano.
     return None
+
 
 
 def calcular_prob_gols_ht(chutes_tot, chutes_gol, minuto):
