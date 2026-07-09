@@ -1336,8 +1336,22 @@ def run():
         liga = str(j.get("liga", ""))
         source = j.get("source", "espn")
 
-        # BUSCA DE ESTATÍSTICAS (Prioridade Mestre)
+        
+        # BUSCA DE ESTATÍSTICAS
         stats = {}
+        try:
+            stats = get_stats_apifootball_v3(j.get("fid_raw", fid))
+        except: pass
+            
+        if not stats or not stats.get("chutes_tot_h"):
+            # Usa os dados da varredura inicial (Bzzoiro/ESPN geralmente trazem básico)
+            stats = {
+                "chutes_tot_h": j.get("sh", 0), "chutes_tot_a": j.get("sa", 0),
+                "chutes_gol_h": j.get("sgh", 0), "chutes_gol_a": j.get("sga", 0),
+                "escanteios_h": j.get("ch", 0), "escanteios_a": j.get("ca", 0),
+                "red_cards_h": j.get("rh", 0), "red_cards_a": j.get("ra", 0)
+            }
+
         try:
             stats = get_stats_apifootball_v3(j.get("fid_raw", fid))
         except:
