@@ -1223,7 +1223,7 @@ def get_favorito_odds(home, away, fid=None, league=None):
             match_id = str(fid).replace("apfc_","")
             r = requests.get("https://apiv3.apifootball.com/",
                              params={"action": "get_odds", "match_id": match_id,
-                                     "APIkey": APIFOOTBALL_COM_KEY}, timeout=8)
+                                     "APIkey": "312c2ecc90136b390d19c765711088d8121b195418b9c2e8006b9e8f7ed8e4ed", timeout=8)
             odds_data = r.json()
             if isinstance(odds_data, list) and odds_data:
                 odd = odds_data[0]
@@ -1786,7 +1786,7 @@ def run():
 
         try:
             r_odd = requests.get("https://apiv3.apifootball.com/",
-                             params={"action": "get_odds", "match_id": fid, "APIkey": APIFOOTBALL_COM_KEY}, timeout=8)
+                             params={"action": "get_odds", "match_id": fid, "APIkey": "312c2ecc90136b390d19c765711088d8121b195418b9c2e8006b9e8f7ed8e4ed", timeout=8)
             odds_data = r_odd.json()
             if isinstance(odds_data, list) and odds_data:
                 odd = odds_data[0]
@@ -1799,7 +1799,7 @@ def run():
     if not fav_por_odds:
         try:
             r = requests.get("https://apiv3.apifootball.com/",
-                             params={"action": "get_odds", "match_id": fid, "APIkey": APIFOOTBALL_COM_KEY}, timeout=8)
+                             params={"action": "get_odds", "match_id": fid, "APIkey": "312c2ecc90136b390d19c765711088d8121b195418b9c2e8006b9e8f7ed8e4ed", timeout=8)
             odds_data = r.json()
             if isinstance(odds_data, list) and odds_data:
                 odd = odds_data[0]
@@ -1812,7 +1812,7 @@ def run():
     if not fav_por_odds:
         try:
             r = requests.get("https://apiv3.apifootball.com/",
-                             params={"action": "get_odds", "match_id": fid, "APIkey": APIFOOTBALL_COM_KEY}, timeout=8)
+                             params={"action": "get_odds", "match_id": fid, "APIkey": "312c2ecc90136b390d19c765711088d8121b195418b9c2e8006b9e8f7ed8e4ed", timeout=8)
             odds_data = r.json()
             if isinstance(odds_data, list) and odds_data:
                 odd = odds_data[0]
