@@ -918,6 +918,7 @@ def get_jogos_apifootball_v3(fids_existentes):
                 "sa": int(ev.get("match_awayteam_score", 0) or 0),
                 "minuto": int(ev.get("match_status", 0) or 0),
                 "liga": ev.get("league_name", ""),
+                "period": 2 if (int(ev.get("match_status", 0) or 0) >= 45) else 1,
                 "source": "apifootball"
             })
         print(f"[APIF-v3] {len(jogos)} novos jogos (de {len(data)} totais)")
@@ -1013,6 +1014,7 @@ def get_jogos_apifootball_v3(fids_existentes):
                 "sa": int(ev.get("match_awayteam_score", 0) or 0),
                 "minuto": int(ev.get("match_status", 0) or 0),
                 "liga": ev.get("league_name", ""),
+                "period": 2 if (int(ev.get("match_status", 0) or 0) >= 45) else 1,
                 "source": "apifootball"
             })
         print(f"[APIF-v3] {len(jogos)} novos jogos (de {len(data)} totais)")
@@ -1108,6 +1110,7 @@ def get_jogos_apifootball_v3(fids_existentes):
                 "sa": int(ev.get("match_awayteam_score", 0) or 0),
                 "minuto": int(ev.get("match_status", 0) or 0),
                 "liga": ev.get("league_name", ""),
+                "period": 2 if (int(ev.get("match_status", 0) or 0) >= 45) else 1,
                 "source": "apifootball"
             })
         print(f"[APIF-v3] {len(jogos)} novos jogos (de {len(data)} totais)")
