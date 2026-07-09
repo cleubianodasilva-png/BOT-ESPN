@@ -1744,7 +1744,7 @@ def check_status_command(total_jogos_live=0, jogos_live=None, jogos_na_janela=No
             new_last_id = update["update_id"]
             msg     = update.get("message", {})
             text    = msg.get("text", "")
-            chat_id = str(msg.get("chat", {}).get("id", ""))
+            chat_orig = msg.get("chat", {}).get("id", 0)
             msg_ts  = msg.get("date", 0)
             # Ignora comandos com mais de 30 minutos (evita processar acúmulo muito antigo)
             if agora_ts - msg_ts > 600: # Ignora comandos com mais de 10 minutos
@@ -1792,12 +1792,12 @@ def check_status_command(total_jogos_live=0, jogos_live=None, jogos_na_janela=No
                     f"🔴 <b>{total_jogos_live} jogos ao vivo</b>\n"
                     f"🎯 <b>{len(jogos_na_janela)} na janela alvo</b>\n"
                     f"{sep}\n"
-                    f"<b>🎯 NA JANELA:</b>\n{linhas_janela}\n"
+                    f"🚨<b>JOGOS NO ALVO:</b>\n{linhas_janela}\n"
                     f"{sep}\n"
                     f"<b>⏳ FORA DA JANELA:</b>\n{linhas_fora}\n"
                     f"{sep}"
                 )
-                send_telegram(msg_radar, botoes=False)
+                send_telegram(msg_radar, chat_id=chat_orig, botoes=False)
                 radar_respondido = True
         if new_last_id > last_id:
             with open(LAST_UPDATE_FILE, 'w') as f: json.dump({"last_id": new_last_id}, f)
