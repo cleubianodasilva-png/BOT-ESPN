@@ -314,8 +314,8 @@ BZZOIRO_URL = "https://sports.bzzoiro.com"
 APIFOOTBALL_URL  = "https://apiv3.apifootball.com"
 
 # APIs Secundárias (Ativas)
-APIFOOTBALL_COM_KEY = "312c2ecc90136b390d19c765711088d8121b195418b9c2e8006b9e8f7ed8e4ed"
-BZZOIRO_TOKEN = "0c594407931777d114db6c3ccaefea54fa10c0ef"
+APIFOOTBALL_COM_KEY = os.getenv("APIFOOTBALL_KEY")
+BZZOIRO_TOKEN = os.getenv("BZZOIRO_TOKEN")
 BZZOIRO_URL = "https://sports.bzzoiro.com"
 
 
@@ -325,8 +325,8 @@ BZZOIRO_URL = "https://sports.bzzoiro.com"
 APIFOOTBALL_URL  = "https://apiv3.apifootball.com"
 
 # APIs Secundárias (Ativas)
-APIFOOTBALL_COM_KEY = "312c2ecc90136b390d19c765711088d8121b195418b9c2e8006b9e8f7ed8e4ed"
-BZZOIRO_TOKEN = "0c594407931777d114db6c3ccaefea54fa10c0ef"
+APIFOOTBALL_COM_KEY = os.getenv("APIFOOTBALL_KEY")
+BZZOIRO_TOKEN = os.getenv("BZZOIRO_TOKEN")
 BZZOIRO_URL = "https://sports.bzzoiro.com"
 
 
@@ -336,8 +336,8 @@ BZZOIRO_URL = "https://sports.bzzoiro.com"
 APIFOOTBALL_URL  = "https://apiv3.apifootball.com"
 
 # APIs Secundárias (Ativas)
-APIFOOTBALL_COM_KEY = "312c2ecc90136b390d19c765711088d8121b195418b9c2e8006b9e8f7ed8e4ed"
-BZZOIRO_TOKEN = "0c594407931777d114db6c3ccaefea54fa10c0ef"
+APIFOOTBALL_COM_KEY = os.getenv("APIFOOTBALL_KEY")
+BZZOIRO_TOKEN = os.getenv("BZZOIRO_TOKEN")
 BZZOIRO_URL = "https://sports.bzzoiro.com"
 
 # ═══════════════+++
