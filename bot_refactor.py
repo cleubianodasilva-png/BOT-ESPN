@@ -895,7 +895,7 @@ def get_jogos_apifootball_v3(fids_existentes):
                 "sh": int(ev.get("match_hometeam_score", 0) or 0),
                 "sa": int(ev.get("match_awayteam_score", 0) or 0),
                 "minuto": int(ev.get("match_status", 0) or 0),
-                "liga": ev.get("league_name", ""),
+                "liga": ev.get("league_name", "") or ev.get("league", "") or ev.get("competition_name", "") or "Liga",
                 "period": 2 if (int(ev.get("match_status", 0) or 0) >= 45) else 1,
                 "source": "apifootball"
             })
@@ -1000,7 +1000,7 @@ def get_jogos_apifootball_v3(fids_existentes):
                 "sh": int(ev.get("match_hometeam_score", 0) or 0),
                 "sa": int(ev.get("match_awayteam_score", 0) or 0),
                 "minuto": int(ev.get("match_status", 0) or 0),
-                "liga": ev.get("league_name", ""),
+                "liga": ev.get("league_name", "") or ev.get("league", "") or ev.get("competition_name", "") or "Liga",
                 "period": 2 if (int(ev.get("match_status", 0) or 0) >= 45) else 1,
                 "source": "apifootball"
             })
@@ -1105,7 +1105,7 @@ def get_jogos_apifootball_v3(fids_existentes):
                 "sh": int(ev.get("match_hometeam_score", 0) or 0),
                 "sa": int(ev.get("match_awayteam_score", 0) or 0),
                 "minuto": int(ev.get("match_status", 0) or 0),
-                "liga": ev.get("league_name", ""),
+                "liga": ev.get("league_name", "") or ev.get("league", "") or ev.get("competition_name", "") or "Liga",
                 "period": 2 if (int(ev.get("match_status", 0) or 0) >= 45) else 1,
                 "source": "apifootball"
             })
