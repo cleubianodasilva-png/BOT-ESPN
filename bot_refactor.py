@@ -1164,6 +1164,8 @@ def get_jogos_bzzoiro(fids_existentes):
                 except: minuto = 0
             liga = ev.get("league", {}) or {}
             liga_nome = liga.get("name", "Desconhecida") if isinstance(liga, dict) else str(liga)
+            p_raw = str(ev.get("period", "") or "")
+            period = 1 if "1" in p_raw or minuto <= 45 else 2
             jogos.append({
                 "fid": fid, "fid_raw": str(ev.get("id", "")),
                 "home": ev.get("home_team", ""), "away": ev.get("away_team", ""),
@@ -1755,18 +1757,18 @@ def msg_universal(home, away, minuto, liga, n, mercado, entrada, placar, extra_v
     if "CORNER" in mercado or "ESCANTEIO" in mercado:
         linha = cantos_atual + 0.5
         if cantos_atual > 0:
-            entrada = f"Mais de {linha}🚩"
+            entrada = f"Mais de {linha}⛳️"
     
     titles = {
-        "HT": "⚽️🔥OVER GOL INTERVALO🔥⚽️",
-        "LIMITEHT": "⚽️🔥OVER GOL LIMITE HT🔥⚽️",
-        "BTTS": "⚽️🔥AMBAS MARCAM🔥⚽️",
-        "OFT": "⚽️🔥OVER 1.5 GOLS PARTIDA🔥⚽️",
-        "OVERGOAL": "⚽️🔥OVER GOL PARTIDA🔥⚽️",
-        "CORNER_HT": "🚩🔥ESCANTEIO LIMITE HT🔥🚩",
-        "CORNER_FT": "🚩🔥ESCANTEIO LIMITE FT🔥🚩",
+        "HT": "⛳️🔥OVER GOL INTERVALO🔥⛳️",
+        "LIMITEHT": "⛳️🔥OVER GOL LIMITE HT🔥⛳️",
+        "BTTS": "⛳️🔥AMBAS MARCAM🔥⛳️",
+        "OFT": "⛳️🔥OVER 1.5 GOLS PARTIDA🔥⛳️",
+        "OVERGOAL": "⛳️🔥OVER GOL PARTIDA🔥⛳️",
+        "CORNER_HT": "⛳️🔥ESCANTEIO LIMITE HT🔥⛳️",
+        "CORNER_FT": "⛳️🔥ESCANTEIO LIMITE FT🔥⛳️",
     }
-    title = titles.get(mercado, f"🔥{mercado}🔥")
+    title = titles.get(mercado, f"⛳️🔥{mercado}🔥⛳️")
     
     if stats:
         chutes_h = stats.get("chutes_tot_h", 0)
@@ -2086,7 +2088,7 @@ def run():
         fid_raw = j.get("fid_raw", fid)
         stats_apif = {}
         try:
-            sa_api = get_stats_apifootball_live(fid)
+            sa_api = get_stats_apifootball_live(fid_raw)
             if isinstance(sa_api, dict): stats_apif = sa_api
         except: pass
         if not stats_apif:
@@ -2104,8 +2106,11 @@ def run():
             except: pass
         stats_espn = {}
         try:
-            se = get_stats_espn(fid, h, a)
-            if isinstance(se, dict): stats_espn = se
+            # ESPN stats: só funciona com ID ESPN limpo (sem prefixo)
+            if j.get("source") == "espn" and fid_raw:
+                eid_clean = fid_raw  # ESPN raw ID já é o event ID
+                se = get_stats_espn(eid_clean, h, a)
+                if isinstance(se, dict): stats_espn = se
         except: pass
         stats_bzz = {}
         try:
