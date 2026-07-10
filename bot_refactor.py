@@ -1522,7 +1522,7 @@ def filtrar_janelas(jogos):
 # ═══════════════════════════════════════════════════════════════════════════════
 # MENSAGEM PADRÃO
 # ═══════════════════════════════════════════════════════════════════════════════
-def gerar_motivo(mercado, stats, sh, sa, fav_final, cantos_atual=0):
+def gerar_motivo(mercado, stats, sh, sa, fav_final, minuto, cantos_atual=0):
     chutes_h          = stats.get("chutes_tot_h", 0) if stats else 0
     chutes_a          = stats.get("chutes_tot_a", 0) if stats else 0
     chutes_gol_h      = stats.get("chutes_gol_h", 0) if stats else 0
@@ -1574,11 +1574,15 @@ def gerar_motivo(mercado, stats, sh, sa, fav_final, cantos_atual=0):
     fav_ganhando = (fav_final == "h" and sh > sa) or (fav_final == "a" and sa > sh)
     # Zebra dominando nos dados
     zebra_dominando = adv_chutes > fav_chutes
-    # Quem amassa: diferença de ataques perigosos
-    diff_atq = fav_atq - adv_atq
-    fav_amassando = diff_atq >= 8
-    adv_amassando = adv_atq >= fav_atq + 8
-    ambos_pressionando = total_atq_perig >= 20 and abs(diff_atq) < 8
+    # Quem amassa: ataques perigosos ≥ 0.70/min
+    # Se ambos atingem 0.70/min, é "ambas pressionando"
+    # Se só um time atinge, esse tá amassando
+    minuto_seguro = max(minuto, 1)
+    fav_atq_por_min = round(fav_atq / minuto_seguro, 2)
+    adv_atq_por_min = round(adv_atq / minuto_seguro, 2)
+    fav_amassando   = fav_atq_por_min >= 0.70 and adv_atq_por_min < 0.70
+    adv_amassando   = adv_atq_por_min >= 0.70 and fav_atq_por_min < 0.70
+    ambos_pressionando = fav_atq_por_min >= 0.70 and adv_atq_por_min >= 0.70
 
     if red_h > 0 or red_a > 0:
         vermelho = " | 🟥 Vermelho: " + ("Casa" if red_h > 0 else "Fora")
@@ -1727,18 +1731,8 @@ def msg_universal(home, away, minuto, liga, n, mercado, entrada, placar, extra_v
     else:
         pressao = "Baixa 💮"
 
-    if "ESCANTEIO" in mercado or "CORNER" in mercado:
-        alerta = f"Já saiu {total_cantos} escanteios até o {minuto}⛳️"
-    elif total_alvo >= 4 and minuto >= 50:
-        alerta = f"Total de {total_alvo} finalizações no alvo - ofensividade alta"
-    elif total_chutes >= 8:
-        alerta = f"Total de {total_chutes} chutes - pressão constante"
-    elif atq_perig_por_min >= 0.7:
-        alerta = f"{total_atq_perig} ataques perigosos - pressão em campo"
-    elif sh + sa >= 1 and minuto >= 60:
-        alerta = "Jogo aberto - gols podem sair"
-    else:
-        alerta = f"{total_chutes} chutes totais e {total_alvo} no alvo"
+    # Substitui alerta antigo pela análise técnica completa com ataques perigosos
+    alerta = gerar_motivo(mercado, stats, sh, sa, fav_final, minuto)
 
     if total_chutes >= 10 or total_alvo >= 5 or total_cantos >= 8:
         odd_rec = "1.50 - 1.70"
@@ -1765,9 +1759,9 @@ def msg_universal(home, away, minuto, liga, n, mercado, entrada, placar, extra_v
         + "⏰ Minuto: <b>" + str(minuto) + "'</b>\n"
         + sep + "\n"
         + "📊 <b>Estatísticas ao Vivo:</b>\n"
-        + "🚀 Chutes: <b>" + str(chutes_h) + " | " + str(chutes_a) + "</b>\n"
-        + "🎯 No Alvo: <b>" + str(alvo_h) + " | " + str(alvo_a) + "</b>\n"
-        + "⚔️ Ataques: <b>" + str(atq_perig_h) + " | " + str(atq_perig_a) + "</b> ⚠️\n"
+        + "🚀 Chutes Totais: <b>" + str(chutes_h) + " | " + str(chutes_a) + "</b>\n"
+        + "🎯 Chutes No Alvo: <b>" + str(alvo_h) + " | " + str(alvo_a) + "</b>\n"
+        + "⚔️ Ataques Perigosos: <b>" + str(atq_perig_h) + " | " + str(atq_perig_a) + "</b> ⚠️\n"
         + "⛳️ Cantos: <b>" + str(cant_h) + " | " + str(cant_a) + "</b>\n"
         + sep + "\n"
         + "💡 <b>Análise Técnica:</b>\n"
