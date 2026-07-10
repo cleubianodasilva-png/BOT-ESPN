@@ -2246,6 +2246,9 @@ def run():
             stats.get("escanteios_h", -1) >= 0 or
             stats.get("escanteios_a", -1) >= 0
         )
+        if not tem_stats:
+            print(f"[SKIP] {h} x {a} — sem stats em nenhuma API, pulando jogo")
+            continue
 
         # Determinar favorito pelas odds (ESPN primeiro, depois Odds API)
         fav_final = get_favorito_odds(h, a, fid=fid, league=j.get("liga_slug", j.get("liga", "")))
