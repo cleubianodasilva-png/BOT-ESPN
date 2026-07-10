@@ -2155,7 +2155,10 @@ def run():
     jogos_dedup = []
     vistos_jogos = set()
     for j in jogos_na_janela:
-        chave = (j["home"].lower().strip(), j["away"].lower().strip())
+        # Normaliza pra mesma chave entre APIs
+        hn_j = re.sub(r'\b(RJ|SP|MG|RS|PR|SC|BA|PE|CE|GO|MT|MS|DF|ES|RN|PB|AL|SE|PI|MA|PA|AM|AC|RO|RR|AP|TO|FR|FC|AC|EC|SE|CF)\b', '', j["home"].lower()).strip()
+        an_j = re.sub(r'\b(RJ|SP|MG|RS|PR|SC|BA|PE|CE|GO|MT|MS|DF|ES|RN|PB|AL|SE|PI|MA|PA|AM|AC|RO|RR|AP|TO|FR|FC|AC|EC|SE|CF)\b', '', j["away"].lower()).strip()
+        chave = (hn_j, an_j)
         if chave not in vistos_jogos:
             vistos_jogos.add(chave)
             jogos_dedup.append(j)
@@ -2166,7 +2169,10 @@ def run():
     for j in jogos_dedup:
         fid    = j["fid"]
         h, a   = j["home"], j["away"]
-        dedup_id = hashlib.md5(f"{h}-{a}".lower().encode()).hexdigest()[:12]
+        # Normaliza nomes pra chave estável entre APIs diferentes
+        hn = re.sub(r'\b(RJ|SP|MG|RS|PR|SC|BA|PE|CE|GO|MT|MS|DF|ES|RN|PB|AL|SE|PI|MA|PA|AM|AC|RO|RR|AP|TO|FR|FC|AC|EC|SE|CF)\b', '', h.lower()).strip()
+        an = re.sub(r'\b(RJ|SP|MG|RS|PR|SC|BA|PE|CE|GO|MT|MS|DF|ES|RN|PB|AL|SE|PI|MA|PA|AM|AC|RO|RR|AP|TO|FR|FC|AC|EC|SE|CF)\b', '', a.lower()).strip()
+        dedup_id = hashlib.md5(f"{hn}-{an}".encode()).hexdigest()[:12]
         m, p   = j["minuto"], j["period"]
         sh, sa = j["sh"], j["sa"]
         liga   = str(j["liga"])
