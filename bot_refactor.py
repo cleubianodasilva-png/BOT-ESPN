@@ -1547,15 +1547,15 @@ def gerar_motivo(mercado, stats, sh, sa, fav_final, minuto, cantos_atual=0):
 
     # Labels com identidade: Favorito(Casa/Fora) ou Zebra(Casa/Fora)
     if fav_final == "h":
-        fav_label   = "Favorito (Casa)"
-        zebra_label = "Zebra (Fora)"
+        fav_label   = "Favorito"
+        zebra_label = "Zebra"
         fav_chutes  = chutes_h; fav_gol = chutes_gol_h
         adv_chutes  = chutes_a; adv_gol = chutes_gol_a
         fav_atq     = atq_perig_h
         adv_atq     = atq_perig_a
     elif fav_final == "a":
-        fav_label   = "Favorito (Fora)"
-        zebra_label = "Zebra (Casa)"
+        fav_label   = "Favorito"
+        zebra_label = "Zebra"
         fav_chutes  = chutes_a; fav_gol = chutes_gol_a
         adv_chutes  = chutes_h; adv_gol = chutes_gol_h
         fav_atq     = atq_perig_a
