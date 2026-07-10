@@ -1251,11 +1251,52 @@ def get_stats_bzzoiro(fid_raw, home, away):
             stats[f"chutes_tot_{key}"] = int(side_data.get("total_shots", 0) or 0)
             stats[f"chutes_gol_{key}"] = int(side_data.get("shots_on_target", 0) or 0)
             stats[f"escanteios_{key}"] = int(side_data.get("corner_kicks", 0) or 0)
+            stats[f"ataques_perigosos_{key}"] = int(side_data.get("dangerous_attack", 0) or 0)
+            stats[f"posse_{key}"] = int(side_data.get("ball_possession", 0) or 0)
             cards = side_data.get("cards", {})
             if isinstance(cards, dict):
                 stats[f"red_cards_{key}"] = int(cards.get("red", 0) or 0)
         return stats
     except: return {}
+
+def get_stats_bzzoiro_by_name(home, away):
+    """Fallback: busca stats no Bzzoiro pelo nome dos times."""
+    import unicodedata
+    def norm(s):
+        return unicodedata.normalize('NFKD', s).encode('ascii', 'ignore').decode().lower().strip()
+    try:
+        headers = {"Authorization": "Token " + BZZOIRO_TOKEN}
+        r = requests.get(BZZOIRO_URL + "/api/v2/events/live/", headers=headers, timeout=15)
+        data = r.json()
+        events = data.get("events", [])
+        h_busca = norm(home)
+        a_busca = norm(away)
+        for ev in events:
+            h_nome = norm(ev.get("home_team", ""))
+            a_nome = norm(ev.get("away_team", ""))
+            if (h_busca in h_nome or h_nome in h_busca) and (a_busca in a_nome or a_nome in a_busca):
+                eid = ev.get("id")
+                rs = requests.get(BZZOIRO_URL + f"/api/v2/events/{eid}/stats/", headers=headers, timeout=10)
+                sd = rs.json()
+                raw_stats = sd.get("stats", {})
+                stats = {}
+                for side_label, side_key in [("home", "h"), ("away", "a")]:
+                    side_data = raw_stats.get(side_label, {})
+                    stats[f"chutes_tot_{side_key}"] = int(side_data.get("total_shots", 0) or 0)
+                    stats[f"chutes_gol_{side_key}"] = int(side_data.get("shots_on_target", 0) or 0)
+                    stats[f"escanteios_{side_key}"] = int(side_data.get("corner_kicks", 0) or 0)
+                    stats[f"ataques_perigosos_{side_key}"] = int(side_data.get("dangerous_attack", 0) or 0)
+                    stats[f"posse_{side_key}"] = int(side_data.get("ball_possession", 0) or 0)
+                    cards = side_data.get("cards", {})
+                    if isinstance(cards, dict):
+                        stats[f"red_cards_{side_key}"] = int(cards.get("red", 0) or 0)
+                if stats.get("chutes_tot_h", 0) > 0 or stats.get("escanteios_h", -1) >= 0:
+                    print(f"[BZZ-NAME] Stats por nome OK: {ev.get('home_team')}x{ev.get('away_team')} | esc {stats.get('escanteios_h')}x{stats.get('escanteios_a')}")
+                    return stats
+        return {}
+    except Exception as e:
+        print(f"[BZZ-NAME] Erro: {e}")
+        return {}
 
 def get_stats_apifootball_by_name(home, away):
     """Fallback: busca jogo na apifootball pelo nome dos times e retorna stats."""
@@ -2146,6 +2187,14 @@ def run():
             sb = get_stats_bzzoiro(fid_raw, h, a)
             if isinstance(sb, dict): stats_bzz = sb
         except: pass
+        # Fallback Bzzoiro por nome (quando o ID da apifootball nao funciona no Bzzoiro)
+        if not stats_bzz or not (stats_bzz.get("chutes_tot_h", 0) > 0 or stats_bzz.get("escanteios_h", -1) >= 0):
+            try:
+                sb_name = get_stats_bzzoiro_by_name(h, a)
+                if isinstance(sb_name, dict) and (sb_name.get("chutes_tot_h", 0) > 0 or sb_name.get("escanteios_h", -1) >= 0):
+                    stats_bzz = sb_name
+                    print(f"[BZZ-NAME] Stats via nome OK: esc {sb_name.get('escanteios_h')}x{sb_name.get('escanteios_a')} | chutes {sb_name.get('chutes_tot_h')}x{sb_name.get('chutes_tot_a')}")
+            except: pass
 
         stats = {}
         for src_nome, src in [("apifootball", stats_apif), ("ESPN", stats_espn), ("Bzzoiro", stats_bzz)]:
