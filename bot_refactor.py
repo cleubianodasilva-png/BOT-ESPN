@@ -2410,6 +2410,7 @@ def run():
         processar_comandos_pendentes(TG_TOKEN, CHAT_ID, jogos_live, jogos_na_janela)
     except Exception as e:
         print(f"[CMD] Erro chamando comandos: {e}")
+    
     print(f"Finalizado. Enviados: {total_env}")
 
 
