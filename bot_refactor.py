@@ -2075,16 +2075,23 @@ def check_status_command(total_jogos_live=0, jogos_live=None, jogos_na_janela=No
                         linhas_fora += f"... e mais {len(fora_janela)-10} jogos"
                 else:
                     linhas_fora = "—"
-                msg_radar = (
-                    f"{sep}\n"
-                    f"📡👉<b>RADAR DE JOGOS AO VIVO</b>👈📡\n"
-                    f"{sep}\n"
-                    f"🔴 <b>{total_jogos_live} jogos ao vivo</b>\n"
-                    f"🎯 <b>{len(jogos_na_janela)} na janela alvo</b>\n"
-                    f"{sep}\n"
-                    f"🚨<b>JOGOS NO ALVO:</b>\n{linhas_janela}"
-                    f"{sep}\n"
-                    f"<b>⏳ FORA DA JANELA:</b>\n{linhas_fora}"
+                                msg_radar = (
+                    f"📡👉 <b>RADAR DE JOGOS AO VIVO</b> 👈📡
+"
+                    f"{sep}
+"
+                    f"⚠️ <b>{total_jogos_live} ao vivo</b> | 🎯 <b>{len(jogos_na_janela)} no alvo</b>
+"
+                    f"{sep}
+"
+                    f"🚨 <b>JOGOS NO ALVO:</b>
+{linhas_janela.strip()}
+"
+                    f"{sep}
+"
+                    f"⏳ <b>FORA DA JANELA:</b>
+{linhas_fora.strip()}
+"
                     f"{sep}"
                 )
                 requests.post(f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage", json={"chat_id": chat_orig, "text": msg_radar, "parse_mode": "HTML"}, timeout=10)
@@ -2494,18 +2501,25 @@ def processar_comandos_pendentes(token, chat_id, jogos_live=None, jogos_na_janel
                         m = j.get("minuto",""); sh = j.get("sh",0); sa = j.get("sa",0)
                         linhas_fora += f"\u23f3 {h} x {a} | {m}' | {sh}x{sa}\n"
                     if not linhas_fora: linhas_fora = "\u2014"
-                    msg_radar = (
-                        f"{sep}\n"
-                        f"\U0001f4e1\U0001f449<b>RADAR DE JOGOS AO VIVO</b>\U0001f448\U0001f4e1\n"
-                        f"{sep}\n"
-                        f"\u26a0\ufe0f <b>{len(jogos_live)} jogos ao vivo</b>\n"
-                        f"\U0001f3af <b>{len(jogos_na_janela)} na janela alvo</b>\n"
-                        f"{sep}\n"
-                        f"\U0001f6a8<b>JOGOS NO ALVO:</b>\n{linhas_jan}"
-                        f"{sep}\n"
-                        f"<b>\u23f3 FORA DA JANELA:</b>\n{linhas_fora}"
-                        f"{sep}"
-                    )
+                                    msg_radar = (
+                    f"📡👉 <b>RADAR DE JOGOS AO VIVO</b> 👈📡
+"
+                    f"{sep}
+"
+                    f"⚠️ <b>{total_jogos_live} ao vivo</b> | 🎯 <b>{len(jogos_na_janela)} no alvo</b>
+"
+                    f"{sep}
+"
+                    f"🚨 <b>JOGOS NO ALVO:</b>
+{linhas_janela.strip()}
+"
+                    f"{sep}
+"
+                    f"⏳ <b>FORA DA JANELA:</b>
+{linhas_fora.strip()}
+"
+                    f"{sep}"
+                )
                     requests.post(f"https://api.telegram.org/bot{token}/sendMessage",
                                   json={"chat_id": chat_orig, "text": msg_radar, "parse_mode": "HTML"})
                     print(f"[CMD] Radar respondido com {len(jogos_live)} jogos live, {len(jogos_na_janela)} na janela")
