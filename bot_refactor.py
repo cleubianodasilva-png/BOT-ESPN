@@ -81,12 +81,12 @@ def gerar_layout_radar(jogos_ao_vivo, jogos_na_janela):
         texto_jan = "Nenhum jogo na janela no momento."
     corpo = (
         f"{sep}\n"
-        f"<b>📡 RADAR — JOGOS AO VIVO</b>\n"
+        f"📡 RADAR — JOGOS AO VIVO\n"
         f"{sep}\n"
-        f"🔴 <b>Jogos na Janela:</b>\n"
+        f"🔴 Jogos na Janela:\n"
         f"{texto_jan}"
         f"{sep}\n"
-        f"🟢 Ao Vivo (Total): <b>{len(jogos_ao_vivo)}</b> jogos"
+        f"🟢 Ao Vivo: <b>{len(jogos_ao_vivo)}</b>"
     )
     return corpo
 import requests
