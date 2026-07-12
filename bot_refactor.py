@@ -1871,6 +1871,10 @@ def msg_universal(home, away, minuto, liga, n, mercado, entrada, placar, extra_v
     if "CORNER" in mercado or "ESCANTEIO" in mercado:
         linha = cantos_atual + 0.5
         entrada = f"Mais de {linha}🚩"
+
+    # Adiciona ⚽ na entrada para mercados de gol
+    if mercado in ("HT", "LIMITEHT", "BTTS", "OFT", "OVERGOAL"):
+        entrada = str(entrada).rstrip() + "⚽"
     
     titles = {
         "HT": "⚽️🔥OVER GOL INTERVALO🔥⚽️",
