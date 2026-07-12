@@ -2087,7 +2087,7 @@ def run():
     jogos_bzz = get_jogos_bzzoiro(fids_apif | {j["fid"] for j in (jogos_espn if jogos_espn else [])})
 
     # Junta tudo na ordem: apifootball > ESPN > Bzzoiro
-    jogos_live = jogos_apif + jogos_espn + jogos_bzz  # ESPN via se DISABLE_ESPN=false
+    jogos_live = jogos_apif + jogos_espn + jogos_bzz
     print(f'[Total] {len(jogos_live)} jogos ao vivo (apifootball={len(jogos_apif)} + ESPN={len(jogos_espn)} + bzzoiro={len(jogos_bzz)})')
 
     # PASSO 2: Filtra janelas alvo
