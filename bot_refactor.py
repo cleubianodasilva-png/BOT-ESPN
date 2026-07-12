@@ -1500,7 +1500,24 @@ def get_favorito_odds(home, away, fid=None, league=None):
         except Exception as e:
             print(f"[ODDS-ESPN] Erro: {e}")
 
-    # Fallback 2: APIfootball.com odds (quando fid for do apifootball)
+    # Fallback 2: Bzzoiro odds (quando fid for da Bzzoiro)
+    if fid and str(fid).startswith("bzz_"):
+        try:
+            fid_raw = str(fid).replace("bzz_", "")
+            headers = {"Authorization": "Token " + BZZOIRO_TOKEN}
+            r = requests.get(BZZOIRO_URL + f"/api/v2/events/{fid_raw}/odds/", headers=headers, timeout=8)
+            if r.status_code == 200:
+                bz = r.json().get("odds", {})
+                odd_h = float(bz.get("home_win", 0) or 0)
+                odd_a = float(bz.get("away_win", 0) or 0)
+                if odd_h > 1 and odd_a > 1:
+                    fav = "h" if odd_h <= odd_a else "a"
+                    print(f"[ODDS-BZZ] {home} x {away} | Casa:{odd_h} Fora:{odd_a} -> Fav:{fav}")
+                    return (fav, odd_h, odd_a)
+        except Exception as e:
+            print(f"[ODDS-BZZ] Erro: {e}")
+
+    # Fallback 3: APIfootball.com odds (quando fid for do apifootball)
     if fid and str(fid).replace("apif_","").isdigit():
         try:
             match_id = str(fid).replace("apif_","")
@@ -2268,17 +2285,19 @@ def run():
                     fav_por_odds = True
         except: pass
 
-        # Fallback odds via Bzzoiro
+        # Fallback odds via Bzzoiro (com auth e campos corretos)
         if not fav_por_odds:
             try:
-                r = requests.get(f"https://sports.bzzoiro.com/api/v2/events/{fid_raw}/odds/", timeout=8)
-                bz = r.json()
-                odd_h = float(bz.get("odd_h", 0) or bz.get("home_odd", 0) or 0)
-                odd_a = float(bz.get("odd_a", 0) or bz.get("away_odd", 0) or 0)
+                headers = {"Authorization": "Token " + BZZOIRO_TOKEN}
+                r = requests.get(f"https://sports.bzzoiro.com/api/v2/events/{fid_raw}/odds/", headers=headers, timeout=8)
+                bz = r.json().get("odds", {})
+                odd_h = float(bz.get("home_win", 0) or 0)
+                odd_a = float(bz.get("away_win", 0) or 0)
                 if odd_h > 1 and odd_a > 1:
                     fav_final = "h" if odd_h <= odd_a else "a"
                     fav_por_odds = True
-            except: pass
+            except:
+                pass
 
         # Sem odds = usa stats (chutes) como fallback para definir favorito
         if not fav_por_odds:
