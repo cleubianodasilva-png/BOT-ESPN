@@ -52,20 +52,28 @@ def analisar_e_disparar(game, stats, p, m, sh, sa, odd_h, odd_a, sent_vistos):
 def gerar_layout_relatorio(greens, reds, data_str):
     sep = "━━━━━━━━━━━━━━━━━━━━"
     total = greens + reds
-    assertividade = (greens / total * 100) if total > 0 else 0.0
-    
-    corpo = (
-        f"{sep}\n"
-        f"📊 RELATÓRIO DIÁRIO — {data_str}\n"
-        f"{sep}\n"
-        f"✅ GREEN: <b>{greens}</b>\n"
-        f"🔴 RED: <b>{reds}</b>\n"
-        f"📈 TOTAL DE ENTRADAS: <b>{total}</b>\n"
-        f"🎯 ASSERTIVIDADE: <b>{assertividade:.1f}%</b>\n"
-        f"{sep}\n"
+    taxa = (greens / total * 100) if total > 0 else 0.0
+    return (
+        f"{sep}
+"
+        f"📊 RELATÓRIO DIÁRIO — {data_str}
+"
+        f"{sep}
+
+"
+        f"✅ GREEN: <b>{greens}</b>
+"
+        f"🔴 RED: <b>{reds}</b>
+"
+        f"📈 TOTAL DE ENTRADAS: <b>{total}</b>
+"
+        f"🎯 ASSERTIVIDADE: <b>{taxa:.1f}%</b>
+
+"
+        f"{sep}
+"
         f"⚠️👆Resultados do dia👆⚠️"
     )
-    return corpo
 def gerar_layout_radar(jogos_ao_vivo, jogos_na_janela):
     sep = "━━━━━━━━━━━━━━━━━━━━"
     texto_jan = ""
@@ -648,26 +656,13 @@ def get_relatorio_hoje():
 
 def enviar_relatorio_diario():
     hoje_key = f"relatorio_{datetime.now(BRT).strftime('%Y-%m-%d')}"
-    sep = "━━━━━━━━━━━━━━━━━━━━"
     hoje = datetime.now(BRT).strftime("%d/%m/%Y")
     greens, reds = get_relatorio_hoje()
-    total = greens + reds
-    taxa  = (greens / total * 100) if total > 0 else 0
-    msg = (
-        f"{sep}\n"
-        f"📊 RELATÓRIO DIÁRIO — {hoje}\n"
-        f"{sep}\n"
-        f"✅ GREEN: <b>{greens}</b>\n"
-        f"🔴 RED: <b>{reds}</b>\n"
-        f"📈 TOTAL DE ENTRADAS: <b>{total}</b>\n"
-        f"🎯 ASSERTIVIDADE: <b>{taxa:.1f}%</b>\n"
-        f"{sep}\n"
-        f"⚠️👆Resultados do dia👆⚠️"
-    )
+    msg = gerar_layout_relatorio(greens, reds, hoje)
     if send_telegram(msg, botoes=False):
         sent_ctrl.add(hoje_key)
         save_sent(sent_ctrl)
-        print(f"[Relatório] Enviado e registrado ({hoje_key})")
+        print(f"[Relatório] Enviado ({hoje_key})")
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # API 1 — ESPN: lista de jogos ao vivo em TODAS as ligas
