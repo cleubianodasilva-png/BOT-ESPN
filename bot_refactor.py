@@ -2334,8 +2334,10 @@ def run():
                 sa3 = get_stats_apifootball_v3(fid_raw)
                 if isinstance(sa3, dict): stats_apif = sa3
             except: pass
-        # Fallback: busca por nome dos times se o ID falhar (apifootball cobre 700+ ligas)
-        if not stats_apif or not (stats_apif.get("escanteios_h", -1) >= 0 and stats_apif.get("escanteios_a", -1) >= 0):
+        # Fallback: busca por nome dos times SOMENTE se apifootball nao retornou NADA
+        if not stats_apif or all(
+            stats_apif.get(c, 0) == 0 for c in ["chutes_tot_h","chutes_tot_a","escanteios_h","escanteios_a"]
+        ):
             try:
                 sa_name = get_stats_apifootball_by_name(h, a)
                 if isinstance(sa_name, dict) and sa_name.get("escanteios_h", -1) >= 0:
