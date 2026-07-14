@@ -2521,10 +2521,16 @@ def run():
         _appm_total = round(_apt_val / m, 2) if m > 0 else 0
         _appm_h = round(_aph_val / m, 2) if m > 0 else 0
         _appm_a = round(_apa_val / m, 2) if m > 0 else 0
-        if _appm_total > 0 and (_appm_total < 1.5 or (_appm_h < 0.8 and _appm_a < 0.8)):
-            print(f"[APPM-DESLIGADO] {h} x {a} — APPM bypass (teste do Cleubiano)")
-        # APPM bypass para testes
-        appm_valido = True
+        # PPM seletiva por repositório
+        # maquina-de-greens-bot (Grupo GITHUB): PPM ativa (0.7/time ou 1.40 total)
+        # boot-ia-inteligente-bot (Grupo ZAPIA): livre
+        REPO_ATUAL = os.environ.get("GITHUB_REPOSITORY", "")
+        if "maquina-de-greens" in REPO_ATUAL:
+            appm_valido = _appm_total >= 1.4 and (_appm_h >= 0.7 or _appm_a >= 0.7)
+            if not appm_valido:
+                print(f"[PPM-BLOQUEADO] {h} x {a} — PPM total={_appm_total} casa={_appm_h} fora={_appm_a} (mín 1.40 total e 0.7 casa/fora)")
+        else:
+            appm_valido = True
 
         # MERCADO 1: OVER 0.5 HT (10-26 min, 0x0, favorito empatando, sem vermelho do fav)
         if p == 1 and 15 <= m <= 27 and sh == 0 and sa == 0 and fav_empatando and red_fav == 0 and appm_valido:
@@ -2568,46 +2574,6 @@ def run():
                         registrar_sinal(fid, "LIMITEHT", h, a, mid)
 
 
-        # MERCADO 1C: VEM GOL NO 1°TEMPO (15-27 min, 0x0, odd fav ≤ 1.40, APPM total ≥ 1.4, casa/fora ≥ 0.7, histórico ≥ 70% HT, média ≥ 2.5, BT ≥ 50%)
-        if p == 1 and 15 <= m <= 27 and sh == 0 and sa == 0 and fav_empatando and red_fav == 0:
-            odd_fav_num = get_odd_favorito_num(h, a, fid=fid, league=j.get('liga_slug', j.get('liga', '')))
-
-            # APPM: total ≥ 1.4, casa ≥ 0.7 OU fora ≥ 0.7
-            appm_vemgol_ok = _appm_total >= 1.4 and (_appm_h >= 0.7 or _appm_a >= 0.7)
-
-            # Histórico dos times (últimos 10 jogos cada) - via apifootball team_id
-            ht_home = get_team_ht_stats(j.get("home_id"), h) if j.get("home_id") else None
-            ht_away = get_team_ht_stats(j.get("away_id"), a) if j.get("away_id") else None
-
-            # Pega o melhor histórico entre casa e fora
-            stats_home_pct = ht_home.get('pct_ht', 0) if ht_home else 0
-            stats_away_pct = ht_away.get('pct_ht', 0) if ht_away else 0
-            melhor_ht_pct = max(stats_home_pct, stats_away_pct)
-
-            stats_home_media = ht_home.get('media_gols', 0) if ht_home else 0
-            stats_away_media = ht_away.get('media_gols', 0) if ht_away else 0
-            media_gols_geral = (stats_home_media + stats_away_media) / 2 if (ht_home and ht_away) else max(stats_home_media, stats_away_media)
-
-            stats_home_bt = ht_home.get('pct_bt', 0) if ht_home else 0
-            stats_away_bt = ht_away.get('pct_bt', 0) if ht_away else 0
-            melhor_bt_pct = max(stats_home_bt, stats_away_bt)
-
-            # Times que FAZEM e SOFREM gols: ambos times com média de gols > 0 (participação dos dois lados)
-            ambos_fazem = (stats_home_media > 0 and stats_away_media > 0) if (ht_home and ht_away) else False
-
-            print(f'[VEMGOL] {h} x {a} | odd={odd_fav_num} | appm={_appm_total}/{_appm_h}/{_appm_a} | ht%={melhor_ht_pct}% | mg={media_gols_geral} | bt%={melhor_bt_pct}% | ambos_fazem={ambos_fazem}')
-            if (odd_fav_num <= 1.40 and appm_vemgol_ok
-                and melhor_ht_pct >= 70 and media_gols_geral >= 2.5
-                and melhor_bt_pct >= 50 and ambos_fazem
-                and appm_valido):
-                hoje = datetime.now(BRT).strftime('%Y%m%d')
-                key = f"{dedup_id}_vemgol1t_{hoje}"
-                if key not in sent:
-                    mid = send_telegram(msg_universal(h, a, m, liga, 3, 'VEMGOL1T', 'Over 0.5', placar, stats=stats, sh=sh, sa=sa, fav_final=fav_final, odd_h=odd_h, odd_a=odd_a), marca=key, home=h, away=a)
-                    if mid:
-                        sent.add(key); total_env += 1
-                        registrar_sinal(fid, 'VEMGOL1T', h, a, mid)
-        
         # MERCADO 2: AMBAS MARCAM BTTS (55-75 min, fav perdendo por 1, sem vermelho do fav)
         if p == 2 and 55 <= m <= 75 and ((sh == 1 and sa == 0) or (sh == 0 and sa == 1)) and fav_perdendo_1 and red_fav == 0 and appm_valido:
             hoje = datetime.now(BRT).strftime('%Y%m%d')
