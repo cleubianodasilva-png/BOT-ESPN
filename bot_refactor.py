@@ -2289,8 +2289,14 @@ def run():
     vistos_jogos = {}
     for j in jogos_na_janela:
         # Normaliza pra mesma chave entre APIs
-        hn_j = re.sub(r'\b(RJ|SP|MG|RS|PR|SC|BA|PE|CE|GO|MT|MS|DF|ES|RN|PB|AL|SE|PI|MA|PA|AM|AC|RO|RR|AP|TO|FR|FC|AC|EC|SE|CF)\b', '', j["home"].lower()).strip()
-        an_j = re.sub(r'\b(RJ|SP|MG|RS|PR|SC|BA|PE|CE|GO|MT|MS|DF|ES|RN|PB|AL|SE|PI|MA|PA|AM|AC|RO|RR|AP|TO|FR|FC|AC|EC|SE|CF)\b', '', j["away"].lower()).strip()
+        hn_raw = unicodedata.normalize('NFKD', j["home"]).encode('ascii', 'ignore').decode().lower()
+        an_raw = unicodedata.normalize('NFKD', j["away"]).encode('ascii', 'ignore').decode().lower()
+        hn_raw = re.sub(r'[^a-z0-9\s]', '', hn_raw)  # remove pontuação: F.C. -> FC
+        an_raw = re.sub(r'[^a-z0-9\s]', '', an_raw)
+        hn_j = re.sub(r'\b(rj|sp|mg|rs|pr|sc|ba|pe|ce|go|mt|ms|df|es|rn|pb|al|se|pi|ma|pa|am|ac|ro|rr|ap|to|fr|fc|ac|ec|se|cf)\b', '', hn_raw).strip()
+        an_j = re.sub(r'\b(rj|sp|mg|rs|pr|sc|ba|pe|ce|go|mt|ms|df|es|rn|pb|al|se|pi|ma|pa|am|ac|ro|rr|ap|to|fr|fc|ac|ec|se|cf)\b', '', an_raw).strip()
+        hn_j = re.sub(r'\s+', ' ', hn_j)
+        an_j = re.sub(r'\s+', ' ', an_j)
         chave = (hn_j, an_j)
         if chave not in vistos_jogos:
             vistos_jogos[chave] = j
@@ -2311,8 +2317,14 @@ def run():
         fid    = j["fid"]
         h, a   = j["home"], j["away"]
         # Normaliza nomes pra chave estável entre APIs diferentes
-        hn = re.sub(r'\b(RJ|SP|MG|RS|PR|SC|BA|PE|CE|GO|MT|MS|DF|ES|RN|PB|AL|SE|PI|MA|PA|AM|AC|RO|RR|AP|TO|FR|FC|AC|EC|SE|CF)\b', '', h.lower()).strip()
-        an = re.sub(r'\b(RJ|SP|MG|RS|PR|SC|BA|PE|CE|GO|MT|MS|DF|ES|RN|PB|AL|SE|PI|MA|PA|AM|AC|RO|RR|AP|TO|FR|FC|AC|EC|SE|CF)\b', '', a.lower()).strip()
+        hn_raw = unicodedata.normalize('NFKD', h).encode('ascii', 'ignore').decode().lower()
+        an_raw = unicodedata.normalize('NFKD', a).encode('ascii', 'ignore').decode().lower()
+        hn_raw = re.sub(r'[^a-z0-9\s]', '', hn_raw)
+        an_raw = re.sub(r'[^a-z0-9\s]', '', an_raw)
+        hn = re.sub(r'\b(rj|sp|mg|rs|pr|sc|ba|pe|ce|go|mt|ms|df|es|rn|pb|al|se|pi|ma|pa|am|ac|ro|rr|ap|to|fr|fc|ac|ec|se|cf)\b', '', hn_raw).strip()
+        an = re.sub(r'\b(rj|sp|mg|rs|pr|sc|ba|pe|ce|go|mt|ms|df|es|rn|pb|al|se|pi|ma|pa|am|ac|ro|rr|ap|to|fr|fc|ac|ec|se|cf)\b', '', an_raw).strip()
+        hn = re.sub(r'\s+', ' ', hn)
+        an = re.sub(r'\s+', ' ', an)
         dedup_id = hashlib.md5(f"{hn}-{an}".encode()).hexdigest()[:12]
         m, p   = j["minuto"], j["period"]
         sh, sa = j["sh"], j["sa"]
