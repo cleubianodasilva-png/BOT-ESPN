@@ -2130,8 +2130,32 @@ def msg_universal(home, away, minuto, liga, n, mercado, entrada, placar, extra_v
     # Substitui alerta antigo pela análise técnica completa com ataques perigosos
     alerta = gerar_motivo(mercado, stats, sh, sa, fav_final, minuto, cantos_atual)
 
-    # ODD mínima sempre 1.70+
-    odd_rec = "1.70+"
+    # Mapeia mercado → campo da API (precisa vir antes de usar campo_odd)
+    mapa_odd = {
+        "HT": "o+0.5", "LIMITEHT": "o+0.5",
+        "BTTS": "bts_yes",
+        "OFT": "o+1.5",
+        "OVERGOAL": "o+1.5",
+        "CORNER_HT": None, "CORNER_FT": None
+    }
+    campo_odd = mapa_odd.get(mercado)
+
+    # ODD real do mercado (melhor entre as casas)
+    if campo_odd:
+        od_b365 = odds_b365.get(campo_odd) if odds_b365 else None
+        od_bano = odds_bano.get(campo_odd) if odds_bano else None
+        if od_b365 and od_bano:
+            melhor = max(od_b365, od_bano)
+            casa   = "Bet365" if melhor == od_b365 else "Betano"
+            odd_rec = f"{melhor:.2f} ({casa})"
+        elif od_b365:
+            odd_rec = f"{od_b365:.2f} (Bet365)"
+        elif od_bano:
+            odd_rec = f"{od_bano:.2f} (Betano)"
+        else:
+            odd_rec = "—"
+    else:
+        odd_rec = "—"
 
     if fav_final == "h":
         fav_nome = home
@@ -2141,14 +2165,6 @@ def msg_universal(home, away, minuto, liga, n, mercado, entrada, placar, extra_v
         fav_nome = "—"
 
     # Mapeia mercado → campo da API
-    mapa_odd = {
-        "HT": "o+0.5", "LIMITEHT": "o+0.5",
-        "BTTS": "bts_yes",
-        "OFT": "o+1.5",
-        "OVERGOAL": "o+1.5",
-        "CORNER_HT": None, "CORNER_FT": None
-    }
-    campo_odd = mapa_odd.get(mercado)
     # Linha de odds das casas
     if campo_odd and (odds_b365 or odds_bano):
         od_b365 = odds_b365.get(campo_odd) if odds_b365 else None
