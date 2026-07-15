@@ -2545,8 +2545,8 @@ def run():
                     sent.add(key); total_env += 1
                     registrar_sinal(fid, "BTTS", h, a, mid)
 
-        # MERCADO 3: OVER 1.5 FT (55-75 min, fav empatando ou perdendo por 1, placares: 0x0/1x0/0x1/1x1, sem vermelho do fav)
-        if p == 2 and 55 <= m <= 75 and ((sh == 1 and sa == 0) or (sh == 0 and sa == 1)) and fav_perdendo_1 and red_fav == 0 and appm_valido:
+        # MERCADO 3: OVER 1.5 FT (55-75 min, fav perdendo por 1, placar 1x0/0x1, sem vermelho do fav, média hist ≥ 2.0)
+        if p == 2 and 55 <= m <= 75 and ((sh == 1 and sa == 0) or (sh == 0 and sa == 1)) and fav_perdendo_1 and red_fav == 0 and appm_valido and hist_ok:
             hoje = datetime.now(BRT).strftime('%Y%m%d')
             key = f"{dedup_id}_oft_{hoje}"
             if key not in sent:
