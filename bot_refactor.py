@@ -19,7 +19,11 @@ def analisar_e_disparar(game, stats, p, m, sh, sa, odd_h, odd_a, sent_vistos):
     # 1. OVER GOL INTERVALO (HT)
     if p == 1 and 15 <= m <= 27:
         if sh == 0 and sa == 0 and red_fav == 0:
-            return "HT", "Over 0.5 Gols HT"
+            alvo = stats.get("chutes_gol_h", 0) + stats.get("chutes_gol_a", 0) if stats else 2
+            atq_perig = stats.get("ataques_perigosos_h", 0) + stats.get("ataques_perigosos_a", 0) if stats else 15
+            chutes = stats.get("chutes_tot_h", 0) + stats.get("chutes_tot_a", 0) if stats else 6
+            if alvo >= 1 and atq_perig >= 15 and chutes >= 6:
+                return "HT", "Over 0.5 Gols HT"
 
     # 1B. OVER GOL PRESSÃO HT
     if p == 1 and 15 <= m <= 27:
@@ -2730,15 +2734,22 @@ def run():
         except Exception as e:
             print(f"[HIST] {h} x {a} — erro no filtro histórico: {e}")
 
-        # MERCADO 1: OVER 0.5 HT (10-26 min, 0x0, favorito empatando, sem vermelho do fav)
+        # MERCADO 1: OVER 0.5 HT (15-27 min, 0x0, favorito empatando, sem vermelho do fav, critérios mínimos de pressão)
         if p == 1 and 15 <= m <= 27 and sh == 0 and sa == 0 and fav_empatando and red_fav == 0 and appm_valido and hist_ok_ht:
-            hoje = datetime.now(BRT).strftime('%Y%m%d')
-            key = f"{dedup_id}_ht_{hoje}"
-            if key not in sent:
-                mid = send_telegram(msg_universal(h, a, m, liga, 3, "HT", "Over 0.5", placar, stats=stats, sh=sh, sa=sa, fav_final=fav_final, odd_h=odd_h, odd_a=odd_a), marca=key, home=h, away=a)
-                if mid:
-                    sent.add(key); total_env += 1
-                    registrar_sinal(fid, "HT", h, a, mid)
+            if stats:
+                alvo_ht = stats.get("chutes_gol_h", 0) + stats.get("chutes_gol_a", 0)
+                atq_perig_ht = stats.get("ataques_perigosos_h", 0) + stats.get("ataques_perigosos_a", 0)
+                chutes_ht = stats.get("chutes_tot_h", 0) + stats.get("chutes_tot_a", 0)
+            else:
+                alvo_ht, atq_perig_ht, chutes_ht = 1, 15, 6
+            if alvo_ht >= 1 and atq_perig_ht >= 15 and chutes_ht >= 6:
+                hoje = datetime.now(BRT).strftime('%Y%m%d')
+                key = f"{dedup_id}_ht_{hoje}"
+                if key not in sent:
+                    mid = send_telegram(msg_universal(h, a, m, liga, 3, "HT", "Over 0.5", placar, stats=stats, sh=sh, sa=sa, fav_final=fav_final, odd_h=odd_h, odd_a=odd_a), marca=key, home=h, away=a)
+                    if mid:
+                        sent.add(key); total_env += 1
+                        registrar_sinal(fid, "HT", h, a, mid)
 
         # MERCADO 1B: OVER GOL PRESSÃO HT (15-27 min, 0x0, sem vermelho, critérios de pressão)
         if p == 1 and 15 <= m <= 27 and sh == 0 and sa == 0 and red_fav == 0 and hist_ok_ht:
