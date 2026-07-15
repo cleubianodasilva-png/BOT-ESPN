@@ -138,6 +138,7 @@ BASE_DIR        = os.path.dirname(os.path.abspath(__file__))
 SENT_FILE       = os.path.join(BASE_DIR, "sent_live_signals.json")
 SINAIS_FILE     = os.path.join(BASE_DIR, "sinais_pendentes.json")
 RESULTADO_FILE  = os.path.join(BASE_DIR, "resultados.json")
+PERFORMANCE_FILE= os.path.join(BASE_DIR, "performance.json")
 LAST_UPDATE_FILE= os.path.join(BASE_DIR, "last_update.json")
 BRT             = timezone(timedelta(hours=-3))
 
@@ -498,8 +499,9 @@ def send_telegram(msg, botoes=True, reply_to=None, marca=None, home="", away="")
 # ═══════════════════════════════════════════════════════════════════════════════
 GITHUB_TOKEN = os.environ.get("GH_PAT", "")
 GITHUB_REPO  = os.environ.get("GITHUB_REPOSITORY", "cleubianodasilva-png/boot-ia-inteligente-bot")
-SENT_API_PATH      = "sent_live_signals.json"
-RESULTADO_API_PATH = "resultados.json"
+SENT_API_PATH        = "sent_live_signals.json"
+RESULTADO_API_PATH   = "resultados.json"
+PERFORMANCE_API_PATH = "performance.json"
 
 def _github_headers():
     return {
@@ -694,6 +696,140 @@ def enviar_relatorio_diario():
         sent_ctrl.add(hoje_key)
         save_sent(sent_ctrl)
         print(f"[Relatório] Enviado ({hoje_key})")
+
+# ─── Performance por Mercado ────────────────────────────────────────────────────
+MAPA_MERCADO = {
+    "HT": "🔥 Over 0.5 Gols HT",
+    "LIMITEHT": "🔥 Over Gol Limite HT",
+    "BTTS": "⚽ BTTS",
+    "OFT": "⚽ Over 1.5 FT",
+    "OVERGOAL": "⚽ Over Gol FT",
+    "CORNER_HT": "⛳️ Escanteio Limite HT",
+    "CORNER_FT": "⛳️ Escanteio Limite FT"
+}
+
+def _load_performance_github():
+    """Carrega performance.json do GitHub. Retorna dict {mercado: {green, red, total}}."""
+    import base64 as _b64
+    if GITHUB_TOKEN and GITHUB_REPO:
+        try:
+            url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{PERFORMANCE_API_PATH}"
+            r = requests.get(url, headers=_github_headers(), timeout=8)
+            if r.status_code == 200:
+                data = json.loads(_b64.b64decode(r.json()["content"]).decode())
+                if isinstance(data, dict):
+                    return data
+        except Exception as e:
+            print(f"[PERFORMANCE] Erro load GitHub: {e}")
+    if os.path.exists(PERFORMANCE_FILE):
+        try:
+            with open(PERFORMANCE_FILE, 'r') as f:
+                return json.load(f)
+        except: pass
+    return {}
+
+def _save_performance_github(perf):
+    """Salva performance.json no GitHub E localmente."""
+    with open(PERFORMANCE_FILE, 'w') as f:
+        json.dump(perf, f, indent=2)
+    if GITHUB_TOKEN and GITHUB_REPO:
+        try:
+            import base64 as _b64
+            url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{PERFORMANCE_API_PATH}"
+            r = requests.get(url, headers=_github_headers(), timeout=8)
+            sha = r.json().get("sha", "") if r.status_code == 200 else ""
+            content_b64 = _b64.b64encode(json.dumps(perf, indent=2).encode()).decode()
+            payload = {"message": "state: atualiza performance [skip ci]", "content": content_b64}
+            if sha: payload["sha"] = sha
+            r2 = requests.put(url, headers=_github_headers(), json=payload, timeout=10)
+            if r2.status_code in (200, 201):
+                print(f"[PERFORMANCE] Salvo no GitHub: {sum(v.get('total',0) for v in perf.values())} registros")
+            else:
+                print(f"[PERFORMANCE] Erro GitHub save: {r2.status_code}")
+        except Exception as e:
+            print(f"[PERFORMANCE] Erro save GitHub: {e}")
+
+def registrar_performance(mercado, resultado):
+    """Registra resultado de um mercado específico no performance.json."""
+    perf = _load_performance_github()
+    if mercado not in perf:
+        perf[mercado] = {"green": 0, "red": 0, "total": 0}
+    perf[mercado]["total"] += 1
+    if resultado == "green":
+        perf[mercado]["green"] += 1
+    else:
+        perf[mercado]["red"] += 1
+    _save_performance_github(perf)
+    total = perf[mercado]["total"]
+    greens = perf[mercado]["green"]
+    pct = greens / total * 100 if total > 0 else 0
+    print(f"[PERFORMANCE] {MAPA_MERCADO.get(mercado, mercado)}: {resultado} ({greens}/{total} = {pct:.1f}%)")
+
+def get_performance():
+    """Retorna dict com performance e % por mercado, e validação 70%/1000."""
+    perf = _load_performance_github()
+    resultado = {}
+    for cod, nome in MAPA_MERCADO.items():
+        p = perf.get(cod, {"green": 0, "red": 0, "total": 0})
+        total = p["total"]
+        greens = p["green"]
+        reds = p["red"]
+        pct = (greens / total * 100) if total > 0 else 0
+        valido = total >= 1000 and pct >= 70
+        resultado[cod] = {
+            "nome": nome, "green": greens, "red": reds,
+            "total": total, "pct": pct, "valido": valido
+        }
+    return resultado
+
+def gerar_layout_performance():
+    """Gera layout do relatório de performance por mercado."""
+    dados = get_performance()
+    sep = "━" * 20
+    linhas = []
+    for cod, info in dados.items():
+        nome = info["nome"]
+        g = info["green"]
+        r = info["red"]
+        t = info["total"]
+        pct = info["pct"]
+        valido = info["valido"]
+        barra = ""
+        if t > 0:
+            g_pct = int(g / t * 10)
+            barra = "🟢" * g_pct + "🔴" * (10 - g_pct)
+        status = "✅" if valido else "⏳"
+        linhas.append(
+            f"{nome}\n"
+            f"   {status} Total: {t} | 🟢 {g} | 🔴 {r}\n"
+            f"   🎯 Acerto: <b>{pct:.1f}%</b>\n"
+            f"   {barra}"
+        )
+    total_g = sum(d["green"] for d in dados.values())
+    total_r = sum(d["red"] for d in dados.values())
+    total_t = total_g + total_r
+    total_pct = (total_g / total_t * 100) if total_t > 0 else 0
+
+    msg = (
+        f"{sep}\n"
+        f"📊<b>RELATÓRIO DE PERFORMANCE</b>📊\n"
+        f"{sep}\n"
+        f"{chr(10).join(linhas)}\n"
+        f"{sep}\n"
+        f"📌 <b>GERAL: {total_t} sinais | 🟢 {total_g} | 🔴 {total_r} | {total_pct:.1f}%</b>\n"
+        f"{sep}\n"
+        f"<b>Regras de Validação:</b>\n"
+        f"✅ Mínimo 1000 entradas + ≥70% acerto = Mercado <b>VÁLIDO</b>\n"
+        f"⏳ Ainda não atingiu os critérios\n"
+        f"{sep}"
+    )
+    return msg
+
+def enviar_relatorio_performance():
+    """Envia relatório de performance para o Telegram."""
+    msg = gerar_layout_performance()
+    if send_telegram(msg, botoes=False):
+        print("[PERFORMANCE] Relatório enviado")
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # API 1 — ESPN: lista de jogos ao vivo em TODAS as ligas
@@ -2623,6 +2759,7 @@ def run():
                 emoji = "🟢GREEN CONFIRMADO🟢" if res == "green" else "🔴RED CONFIRMADO🔴"
                 send_telegram(emoji, botoes=False, reply_to=s.get("message_id"))
                 salvar_resultado(res)
+                registrar_performance(s.get("mercado"), res)
             else:
                 rest.append(s)
         _save_sinais_github(rest)
@@ -2700,6 +2837,14 @@ def processar_comandos_pendentes(token, chat_id, jogos_live=None, jogos_na_janel
                 elif "/relatoriodiario" in text:
                     try: enviar_relatorio_diario()
                     except: pass
+                elif "/performance" in text:
+                    try:
+                        msg = enviar_relatorio_performance()
+                        if not msg:
+                            requests.post(f"https://api.telegram.org/bot{token}/sendMessage",
+                                          json={"chat_id": chat_orig, "text": "Ainda sem dados de performance registrados.", "parse_mode": "HTML"})
+                    except Exception as e:
+                        print(f"[PERFORMANCE] Erro: {e}")
         if max_id > 0:
             try:
                 off = max_id
