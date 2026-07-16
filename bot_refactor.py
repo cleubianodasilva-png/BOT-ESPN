@@ -482,9 +482,9 @@ def send_telegram(msg, botoes=True, reply_to=None, marca=None, home="", away="",
             query = urllib.parse.quote(f"{home} vs {away}") if home and away else ""
             bet365_url   = "https://www.bet365.bet.br/#/AZ/"
             paripesa_url = "https://www.paripesa.com/en/br/"
-            # Constrói texto dos botões com as odds
-            txt_b365 = f"🟣BET365🟣 {odd_b365_val:.2f}" if odd_b365_val else "🟣BET365🟣"
-            txt_paripesa = f"🔵PARIPESA🔵 {odd_bano_val:.2f}" if odd_bano_val else "🔵PARIPESA🔵"
+            # Constrói texto dos botões exatamente como na imagem
+            txt_b365 = "🟣BET365🟣"
+            txt_paripesa = "🔵PARIPESA🔵"
             payload["reply_markup"] = json.dumps({"inline_keyboard": [[
                 {"text": txt_b365, "url": bet365_url},
                 {"text": txt_paripesa, "url": paripesa_url}
