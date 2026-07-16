@@ -1003,8 +1003,10 @@ def get_stats_apifootball_live(fid):
         stats = {}
         for s in raw:
             tipo = s.get("type", "").lower()
-            h_val = s.get("home", "0").replace("%", "")
-            a_val = s.get("away", "0").replace("%", "")
+            h_val = s.get("home", "").replace("%", "").strip()
+            a_val = s.get("away", "").replace("%", "").strip()
+            if not h_val or not a_val:
+                continue
             if "corner" in tipo:
                 stats["escanteios_h"], stats["escanteios_a"] = int(h_val), int(a_val)
             elif "on target" in tipo:
@@ -1053,8 +1055,10 @@ def get_stats_apifootball_v3(match_id):
         stats = {}
         for s in raw:
             tipo = s.get("type", "").lower()
-            h_val = s.get("home", "0").replace("%", "")
-            a_val = s.get("away", "0").replace("%", "")
+            h_val = s.get("home", "").replace("%", "").strip()
+            a_val = s.get("away", "").replace("%", "").strip()
+            if not h_val or not a_val:
+                continue
             if "corner" in tipo:
                 stats["escanteios_h"], stats["escanteios_a"] = int(h_val), int(a_val)
             elif "on target" in tipo:
@@ -1239,8 +1243,10 @@ def get_stats_apifootball_v3(match_id):
         stats = {}
         for s in raw:
             tipo = s.get("type", "").lower()
-            h_val = s.get("home", "0").replace("%", "")
-            a_val = s.get("away", "0").replace("%", "")
+            h_val = s.get("home", "").replace("%", "").strip()
+            a_val = s.get("away", "").replace("%", "").strip()
+            if not h_val or not a_val:
+                continue
             if "corner" in tipo:
                 stats["escanteios_h"], stats["escanteios_a"] = int(h_val), int(a_val)
             elif "on target" in tipo:
