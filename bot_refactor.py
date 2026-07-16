@@ -131,7 +131,19 @@ def obter_nome_liga(game, fonte):
 import os, json, requests, time
 APIFOOTBALL_KEY = os.getenv("APIFOOTBALL_KEY", "")
 from datetime import datetime, timezone, timedelta
-import hashlib, re
+import hashlib, re, unicodedata
+
+# ─── Normalização de nomes de times (acentos, abreviações, prefixos) ────────────
+def norm_nome_time(nome):
+    """Remove acentos, expande abreviações e limpa prefixos/sufixos de nome de time."""
+    n = unicodedata.normalize('NFKD', nome).encode('ascii', 'ignore').decode().lower().strip()
+    # Remove prefixos comuns: msk, hnk, nk, fk, sk, fc, etc
+    n = re.sub(r'\b(msk|hnk|nk|fk|sk|fc|ac|ec|se|cf)\b', '', n)
+    # Expande abreviações comuns da apifootball
+    n = n.replace('u.', 'universitatea').replace('dyn.', 'dynamo').replace('s.n.', '').replace('c.s.', '')
+    # Remove siglas de estados e outros prefixos genéricos
+    n = re.sub(r'\b(rj|sp|mg|rs|pr|sc|ba|pe|ce|go|mt|ms|df|es|rn|pb|al|se|pi|ma|pa|am|ro|rr|ap|to|fr|ac|ec|se|cf)\b', '', n)
+    return re.sub(r'\s+', ' ', n).strip()
 
 # ─── Caminhos e Fuso ───────────────────────────────────────────────────────────
 BASE_DIR        = os.path.dirname(os.path.abspath(__file__))
@@ -2265,8 +2277,8 @@ def run():
     vistos_jogos = {}
     for j in jogos_na_janela:
         # Normaliza pra mesma chave entre APIs
-        hn_j = re.sub(r'\b(RJ|SP|MG|RS|PR|SC|BA|PE|CE|GO|MT|MS|DF|ES|RN|PB|AL|SE|PI|MA|PA|AM|AC|RO|RR|AP|TO|FR|FC|AC|EC|SE|CF)\b', '', j["home"].lower()).strip()
-        an_j = re.sub(r'\b(RJ|SP|MG|RS|PR|SC|BA|PE|CE|GO|MT|MS|DF|ES|RN|PB|AL|SE|PI|MA|PA|AM|AC|RO|RR|AP|TO|FR|FC|AC|EC|SE|CF)\b', '', j["away"].lower()).strip()
+        hn_j = norm_nome_time(j["home"])
+        an_j = norm_nome_time(j["away"])
         # Remove sufixos genéricos de nome de time (Riverhounds, United, City, etc.)
         hn_j = re.sub(r'\b(riverhounds|united|city|juniors|athletic|atlético|nacional|wanderers|rover|rovers|dynamo|galaxy|sporting|real|inter|internacional|deportivo|racing|club|instituto)\b', '', hn_j).strip()
         an_j = re.sub(r'\b(riverhounds|united|city|juniors|athletic|atlético|nacional|wanderers|rover|rovers|dynamo|galaxy|sporting|real|inter|internacional|deportivo|racing|club|instituto)\b', '', an_j).strip()
@@ -2312,8 +2324,8 @@ def run():
         fid    = j["fid"]
         h, a   = j["home"], j["away"]
         # Normaliza nomes pra chave estável entre APIs diferentes
-        hn = re.sub(r'\b(RJ|SP|MG|RS|PR|SC|BA|PE|CE|GO|MT|MS|DF|ES|RN|PB|AL|SE|PI|MA|PA|AM|AC|RO|RR|AP|TO|FR|FC|AC|EC|SE|CF)\b', '', h.lower()).strip()
-        an = re.sub(r'\b(RJ|SP|MG|RS|PR|SC|BA|PE|CE|GO|MT|MS|DF|ES|RN|PB|AL|SE|PI|MA|PA|AM|AC|RO|RR|AP|TO|FR|FC|AC|EC|SE|CF)\b', '', a.lower()).strip()
+        hn = norm_nome_time(h)
+        an = norm_nome_time(a)
         dedup_id = hashlib.md5(f"{hn}-{an}".encode()).hexdigest()[:12]
         m, p   = j["minuto"], j["period"]
         sh, sa = j["sh"], j["sa"]
