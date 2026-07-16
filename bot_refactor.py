@@ -1938,12 +1938,12 @@ def msg_universal(home, away, minuto, liga, n, mercado, entrada, placar, extra_v
     alerta = gerar_motivo(mercado, stats, sh, sa, fav_final, minuto, cantos_atual)
 
     # ODD real do mercado (Bet365, fallback Betano)
+    # ODD do momento: tenta Bet365, depois qualquer outra
+    odd_rec = "—"
     if odd_b365:
         odd_rec = f"{odd_b365:.2f}"
     elif odd_bano:
-        odd_rec = f"{odd_bano:.2f} (Betano)"
-    else:
-        odd_rec = "—"
+        odd_rec = f"{odd_bano:.2f}"
 
     if fav_final == "h":
         fav_nome = home
