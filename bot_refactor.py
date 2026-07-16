@@ -2732,7 +2732,7 @@ def processar_comandos_pendentes(token, chat_id, jogos_live=None, jogos_na_janel
                 elif "/relatoriodiario" in text:
                     try: enviar_relatorio_diario()
                     except: pass
-                elif "/performance" in text:
+                elif "/mercados" in text:
                     try:
                         msg = enviar_relatorio_performance()
                         if not msg:
