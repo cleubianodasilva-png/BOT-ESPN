@@ -2288,8 +2288,8 @@ def run():
             except: pass
 
         stats = {}
-        # PASSO 1: Escanteios — ESPN primeiro (mais precisa), apifootball cobre se ESPN falhar
-        for src_nome, src in [("ESPN", stats_espn), ("apifootball", stats_apif), ("Bzzoiro", stats_bzz)]:
+        # PASSO 1: Escanteios — apifootball primeiro (cobre todas as ligas), ESPN/Bzzoiro fallback
+        for src_nome, src in [("apifootball", stats_apif), ("ESPN", stats_espn), ("Bzzoiro", stats_bzz)]:
             for campo in ["escanteios_h", "escanteios_a"]:
                 if campo not in src:
                     continue
