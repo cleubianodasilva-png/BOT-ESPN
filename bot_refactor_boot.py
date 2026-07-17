@@ -1984,8 +1984,10 @@ def msg_universal(home, away, minuto, liga, n, mercado, entrada, placar, extra_v
         pressao = "Moderada 💪"
     elif atq_perig_por_min >= 0.5:
         pressao = "Média ✅"
-    else:
+    elif atq_perig_por_min >= 0.3:
         pressao = "Baixa 👎"
+    else:
+        pressao = "Muito Baixa 👇"
 
     # Substitui alerta antigo pela análise técnica completa com ataques perigosos
     alerta = gerar_motivo(mercado, stats, sh, sa, fav_final, minuto, cantos_atual)
