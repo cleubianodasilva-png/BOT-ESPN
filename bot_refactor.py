@@ -2340,20 +2340,24 @@ def run():
 
         print(f"[Analisando] {h} x {a} | {placar} | {m}min")
 
-        # Stats FUSION: apifootball (principal) → ESPN → Bzzoiro (reservas)
+        # Stats FUSION: apifootball (principal) -> ESPN -> Bzzoiro (reservas)
         fid_raw = j.get("fid_raw", fid)
         stats_apif = {}
-        try:
-            sa_api = get_stats_apifootball_live(fid_raw)
-            if isinstance(sa_api, dict): stats_apif = sa_api
-        except: pass
-        if not stats_apif:
+        source = j.get("source", "")
+        # So usa apifootball com ID se a fonte original for apifootball
+        # ESPN tem IDs proprios que NAO funcionam na apifootball
+        if source == "apifootball" or source == "bzzoiro":
             try:
-                sa3 = get_stats_apifootball_v3(fid_raw)
-                if isinstance(sa3, dict): stats_apif = sa3
+                sa_api = get_stats_apifootball_live(fid_raw)
+                if isinstance(sa_api, dict): stats_apif = sa_api
             except: pass
-        # Fallback: busca por nome dos times se o ID falhar (apifootball cobre 700+ ligas)
-        if not stats_apif or not (stats_apif.get("escanteios_h", -1) >= 0 and stats_apif.get("escanteios_a", -1) >= 0):
+            if not stats_apif:
+                try:
+                    sa3 = get_stats_apifootball_v3(fid_raw)
+                    if isinstance(sa3, dict): stats_apif = sa3
+                except: pass
+        # Se veio da ESPN ou o ID nao funcionou, busca por nome dos times
+        if source == "espn" or not stats_apif or not (stats_apif.get("escanteios_h", -1) >= 0 and stats_apif.get("escanteios_a", -1) >= 0):
             try:
                 sa_name = get_stats_apifootball_by_name(h, a)
                 if isinstance(sa_name, dict) and sa_name.get("escanteios_h", -1) >= 0:
