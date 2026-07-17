@@ -1730,11 +1730,11 @@ def gerar_motivo(mercado, stats, sh, sa, fav_final, minuto, cantos_atual=0):
         chutes_por_min = atq_por_min = cantos_por_min = 0
 
     if (chutes_por_min >= 0.4 and total_alvo >= 3) or (cantos_por_min >= 0.25) or (atq_por_min >= 0.7):
-        clima = "Jogo QUENTE \U0001f525"
+        clima = "🥵 Quente"
     elif chutes_por_min >= 0.2 or total_alvo >= 1 or atq_por_min >= 0.4:
-        clima = "Jogo MORNO \U0001f4aa"
+        clima = "🥱 Morno"
     else:
-        clima = "Jogo FRIO \U0001f4ae"
+        clima = "🥶 Frio"
 
     # FAVORITO
     if sh < sa:
