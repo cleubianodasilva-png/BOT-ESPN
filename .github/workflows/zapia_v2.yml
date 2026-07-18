@@ -25,6 +25,5 @@ jobs:
           TG_TOKEN: ${{ secrets.TG_TOKEN }}
           TG_GROUP_ID: ${{ secrets.TG_GROUP_ID }}
           APIFOOTBALL_KEY: ${{ secrets.APIFOOTBALL_KEY }}
-          BZZOIRO_TOKEN: ${{ secrets.BZZOIRO_TOKEN }}
           GH_PAT: ${{ secrets.GH_PAT }}
         run: python bot_refactor.py
