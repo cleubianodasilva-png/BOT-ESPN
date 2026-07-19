@@ -8,5 +8,10 @@
     "green": 2,
     "red": 2,
     "total": 4
+  },
+  "BTTS": {
+    "green": 0,
+    "red": 1,
+    "total": 1
   }
 }
