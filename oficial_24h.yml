@@ -1,0 +1,23 @@
+name: Maquina Oficial 24h
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install
+        run: pip install requests pytz python-dateutil cloudscraper beautifulsoup4
+      - name: Run
+        env:
+          TG_TOKEN: ${{ secrets.TG_TOKEN }}
+          TG_GROUP_ID: ${{ secrets.TG_GROUP_ID }}
+          APIFOOTBALL_KEY: ${{ secrets.APIFOOTBALL_KEY }}
+          BZZOIRO_TOKEN: ${{ secrets.BZZOIRO_TOKEN }}
+          GH_PAT: ${{ secrets.GH_PAT }}
+        run: python bot_refactor.py
