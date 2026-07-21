@@ -6685,5 +6685,11 @@
     "resultado": "green",
     "mercado": "CORNER_HT",
     "timestamp": "2026-07-21T17:20:57.614044-03:00"
+  },
+  {
+    "data": "2026-07-21",
+    "resultado": "green",
+    "mercado": "BTTS",
+    "timestamp": "2026-07-21T17:21:00.545292-03:00"
   }
 ]
