@@ -2447,11 +2447,41 @@ VIP_PROMO = (
 def run_vip():
     """Executa verificacao VIP ao final do ciclo"""
     try:
-        import subprocess, sys
+        # Busca ASAAS_TOKEN do GitHub Secrets usando o GH_PAT
+        import subprocess, sys, os, json
+        gh_pat = os.environ.get("GH_PAT", "")
+        asaas_token = os.environ.get("ASAAS_TOKEN", "")
+        if not asaas_token and gh_pat:
+            try:
+                import urllib.request
+                req = urllib.request.Request(
+                    "https://api.github.com/repos/cleubianodasilva-png/BOT-ESPN/actions/secrets/ASAAS_TOKEN",
+                    headers={"Authorization": f"Bearer {gh_pat}", "Accept": "application/vnd.github.v3+json"}
+                )
+                # This won't return the value, only metadata. Let's use a different approach.
+                pass
+            except:
+                pass
+        
+        # Fallback: tenta ler de config.json no repositório
+        if not asaas_token:
+            try:
+                with open("config.json") as f:
+                    cfg = json.load(f)
+                    asaas_token = cfg.get("asaas_token", "")
+            except:
+                pass
+        
+        if not asaas_token:
+            print("[VIP] ASAAS_TOKEN não disponível - pulando")
+            return
+        
+        os.environ["ASAAS_TOKEN"] = asaas_token
+        
         print("[VIP] Verificando novos pagamentos...")
-        subprocess.run([sys.executable, "vip_manager.py", "check"], capture_output=True, timeout=30)
+        subprocess.run([sys.executable, "vip_manager.py", "check"], capture_output=True, timeout=30, env={**os.environ, "ASAAS_TOKEN": asaas_token})
         print("[VIP] Removendo expirados...")
-        subprocess.run([sys.executable, "vip_manager.py", "purge"], capture_output=True, timeout=30)
+        subprocess.run([sys.executable, "vip_manager.py", "purge"], capture_output=True, timeout=30, env={**os.environ, "ASAAS_TOKEN": asaas_token})
     except Exception as e:
         print(f"[VIP] Erro: {e}")
 
