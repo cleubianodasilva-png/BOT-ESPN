@@ -795,8 +795,8 @@ def get_stats_espn(fid_raw, league_slug):
         stats["yellow_cards_a"] = int(away_stats.get("yellow cards", 0))
         stats["red_cards_h"] = int(home_stats.get("red cards", 0))
         stats["red_cards_a"] = int(away_stats.get("red cards", 0))
-        stats["ataques_perigosos_h"] = int(home_stats.get("shots", 0) + home_stats.get("corner kicks", 0) + home_stats.get("crosses", 0))
-        stats["ataques_perigosos_a"] = int(away_stats.get("shots", 0) + away_stats.get("corner kicks", 0) + away_stats.get("crosses", 0))
+        stats["ataques_perigosos_h"] = int(home_stats.get("shots", 0) + home_stats.get("shots on goal", 0) + home_stats.get("corner kicks", 0))
+        stats["ataques_perigosos_a"] = int(away_stats.get("shots", 0) + away_stats.get("shots on goal", 0) + away_stats.get("corner kicks", 0))
         stats["faltas_h"] = int(home_stats.get("fouls", 0))
         stats["faltas_a"] = int(away_stats.get("fouls", 0))
 
