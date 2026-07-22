@@ -225,12 +225,11 @@ def get_stats_promiedos(game_id):
             stats["chutes_tot_h"] = stats["chutes_gol_h"]
             stats["chutes_tot_a"] = stats["chutes_gol_a"]
 
-        # Ataques Perigosos — Promiedos NÃO tem esse campo separado.
-        # O campo "Ataques" da Promiedos são ataques TOTAIS (não perigosos) — NÃO usar.
-        # Usamos chutes + chutes no alvo como proxy de ataques perigosos (mais realista).
-        if "chutes_tot_h" in stats and "chutes_gol_h" in stats:
-            stats["ataques_perigosos_h"] = stats["chutes_tot_h"] + stats["chutes_gol_h"]
-            stats["ataques_perigosos_a"] = stats["chutes_tot_a"] + stats["chutes_gol_a"]
+        # Ataques Perigosos = Chutes Totais + Escanteios (fórmula Betano/Bet365)
+        # Promiedos não tem esse campo separado, então calculamos.
+        if "chutes_tot_h" in stats and "escanteios_h" in stats:
+            stats["ataques_perigosos_h"] = stats["chutes_tot_h"] + stats["escanteios_h"]
+            stats["ataques_perigosos_a"] = stats["chutes_tot_a"] + stats["escanteios_a"]
         elif "chutes_tot_h" in stats:
             stats["ataques_perigosos_h"] = stats["chutes_tot_h"]
             stats["ataques_perigosos_a"] = stats["chutes_tot_a"]
