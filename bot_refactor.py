@@ -117,7 +117,7 @@ from datetime import datetime, timezone, timedelta
 import hashlib, re, unicodedata
 
 # ─── Promiedos: fonte principal (odds pré-live + ao vivo + estatísticas) ───
-from promiedos_module import get_jogos_promiedos, get_stats_promiedos, get_odds_promiedos, checar_resultado_promiedos, norm_nome_time
+from promiedos_module import get_jogos_promiedos, get_stats_promiedos, get_odds_promiedos, checar_resultado_promiedos, norm_nome_time, get_ataques_perigosos_bzzoiro
 
 # ─── norm_nome_time importada do promiedos_module ───
 
@@ -1505,6 +1505,17 @@ def run():
                     print(f"[PROMIEDOS-STATS] Stats OK: esc {stats.get('escanteios_h')}x{stats.get('escanteios_a')} | atq_perig {stats.get('ataques_perigosos_h')}x{stats.get('ataques_perigosos_a')} | chutes: {stats.get('chutes_tot_h')}/{stats.get('chutes_tot_a')}")
             except Exception as e:
                 print(f"[PROMIEDOS-STATS ERRO] {e}")
+
+            # BZZOIRO: Ataques Perigosos direto da fonte (sobrescreve cálculo)
+            if stats and isinstance(stats, dict):
+                try:
+                    bzz = get_ataques_perigosos_bzzoiro(h, a)
+                    if bzz and bzz.get("ataques_perigosos_h", 0) > 0:
+                        stats["ataques_perigosos_h"] = bzz["ataques_perigosos_h"]
+                        stats["ataques_perigosos_a"] = bzz["ataques_perigosos_a"]
+                        print(f"[BZZOIRO-DIRETO] Ataques Perigosos sobrescritos: {stats['ataques_perigosos_h']}x{stats['ataques_perigosos_a']}")
+                except Exception as e:
+                    print(f"[BZZOIRO-ERRO] {e}")
 
             # Complemento: se Promiedos não tem chutes, busca da ESPN
             if stats and stats.get("chutes_tot_h", 0) == 0 and stats.get("chutes_tot_a", 0) == 0:
