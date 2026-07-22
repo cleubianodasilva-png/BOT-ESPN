@@ -117,6 +117,9 @@ APIFOOTBALL_KEY = os.getenv("APIFOOTBALL_KEY", "")
 from datetime import datetime, timezone, timedelta
 import hashlib, re, unicodedata
 
+# ─── Flashscore: fonte complementar gratuita ───
+from flashscore_module import get_jogos_flashscore, get_stats_flashscore
+
 # ─── Normalização de nomes de times (acentos, abreviações, prefixos) ────────────
 def norm_nome_time(nome):
     """Remove acentos, expande abreviações e limpa prefixos/sufixos de nome de time."""
@@ -1851,7 +1854,7 @@ def get_media_gols_historica(home_id, away_id):
 def run():
     # ─── FONTE PRINCIPAL: ESPN | fallback: apifootball ───
     BOT_SOURCE = "espn"
-    print(f"[Iniciando monitoramento — Fonte: ESPN (principal) + apifootball (fallback)]")
+    print(f"[Iniciando monitoramento — Fonte: ESPN (principal) + apifootball (fallback) + Flashscore (gratuito)]")
     sent      = load_sent()
     total_env = 0
     janela_id = datetime.now(BRT).strftime('%Y%m%d%H')
@@ -1884,6 +1887,24 @@ def run():
                         print(f"[APIF-FALLBACK] Adicionado: {j['home']} x {j['away']} (não estava na ESPN)")
         except Exception as e:
             print(f"[APIF-FALLBACK ERRO] {e}")
+        # Flashscore: fonte complementar gratuita (sem chave)
+        try:
+            fids_atuais = set()
+            for j in jogos_live:
+                hn = norm_nome_time(j["home"])
+                an = norm_nome_time(j["away"])
+                fids_atuais.add(hashlib.md5(f"{hn}-{an}".encode()).hexdigest()[:16])
+            jogos_flash = get_jogos_flashscore(set())
+            if jogos_flash:
+                for j in jogos_flash:
+                    hn = norm_nome_time(j["home"])
+                    an = norm_nome_time(j["away"])
+                    chave = hashlib.md5(f"{hn}-{an}".encode()).hexdigest()[:16]
+                    if chave not in fids_atuais:
+                        jogos_live.append(j)
+                        print(f"[FLASH-FALLBACK] Adicionado: {j['home']} x {j['away']} ({j['liga']})")
+        except Exception as e:
+            print(f"[FLASH-FALLBACK ERRO] {e}")
     # PASSO 2: Filtra janelas alvo
     jogos_na_janela = filtrar_janelas(jogos_live)
     print(f"[Janela] {len(jogos_na_janela)} jogos nas janelas alvo")
@@ -1955,6 +1976,17 @@ def run():
                         stats = sa_name
                         print(f"[APIF-NAME] Stats por nome OK: esc {sa_name.get('escanteios_h')}x{sa_name.get('escanteios_a')}")
                 except: pass
+            # Flashscore: stats fallback (gratuito, sem chave)
+            if not stats or not (stats.get("escanteios_h", -1) >= 0 and stats.get("escanteios_a", -1) >= 0):
+                try:
+                    fid_raw_flash = j.get("fid_raw", "")
+                    if fid_raw_flash and not fid_raw_flash.startswith("apif_") and len(fid_raw_flash) > 4:
+                        sa_flash = get_stats_flashscore(fid_raw_flash)
+                        if isinstance(sa_flash, dict) and sa_flash.get("escanteios_h", -1) >= 0:
+                            stats = sa_flash
+                            print(f"[FLASH-STATS] Stats Flashscore OK: esc {stats.get('escanteios_h')}x{stats.get('escanteios_a')}")
+                except Exception as e:
+                    print(f"[FLASH-STATS ERRO] {e}")
 
         # Preenche defaults para campos que faltam
         for k in ["chutes_tot_h","chutes_tot_a","chutes_gol_h","chutes_gol_a"]:
