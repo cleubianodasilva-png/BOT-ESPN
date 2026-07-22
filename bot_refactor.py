@@ -19,12 +19,7 @@ def analisar_e_disparar(game, stats, p, m, sh, sa, odd_h, odd_a, sent_vistos):
     # 1. OVER GOL INTERVALO (HT)
     if p == 1 and 15 <= m <= 27:
         if sh == 0 and sa == 0 and red_fav == 0:
-            # Critérios: chutes≥6, alvo≥1, atq_perig≥15
-            ch_tot = (stats.get("chutes_tot_h", 0) if stats else 0) + (stats.get("chutes_tot_a", 0) if stats else 0)
-            ch_gol = (stats.get("chutes_gol_h", 0) if stats else 0) + (stats.get("chutes_gol_a", 0) if stats else 0)
-            atq = (stats.get("ataques_perigosos_h", 0) if stats else 0) + (stats.get("ataques_perigosos_a", 0) if stats else 0)
-            if ch_tot >= 6 and ch_gol >= 1 and atq >= 15:
-                return "HT", "Over 0.5 Gols HT"
+            return "HT", "Over 0.5 Gols HT"
 
     # 2. OVER GOL PARTIDA (FT)
     if p == 2 and 55 <= m <= 75:
