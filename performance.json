@@ -5,9 +5,9 @@
     "total": 13
   },
   "BTTS": {
-    "green": 0,
+    "green": 1,
     "red": 2,
-    "total": 2
+    "total": 3
   },
   "OFT": {
     "green": 1,
