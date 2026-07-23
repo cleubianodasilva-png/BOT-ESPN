@@ -59,6 +59,18 @@ input:focus { border-color:#ffd700; outline:none; }
 .toggle-switch input:checked + .toggle-slider { background:#27ae60; }
 .toggle-switch input:checked + .toggle-slider:before { transform:translateX(22px); }
 .global-disabled { opacity:0.4; pointer-events:none; }
+.performance {
+  display:flex; align-items:center; gap:12px;
+  background:rgba(0,0,0,0.2); border-radius:8px; padding:8px 12px; margin-bottom:10px;
+  font-size:0.85em;
+}
+.performance .bar-wrap { flex:1; height:18px; background:rgba(255,255,255,0.1); border-radius:9px; overflow:hidden; display:flex; }
+.performance .bar-green { height:100%; background:#27ae60; transition:width 0.5s; }
+.performance .bar-red { height:100%; background:#e74c3c; transition:width 0.5s; }
+.performance .stats { white-space:nowrap; font-weight:bold; }
+.performance .stats .green { color:#2ecc71; }
+.performance .stats .red { color:#e74c3c; }
+.performance .stats .taxa { color:#ffd700; }
 @media (max-width:600px) { .container { padding:12px; } h1 { font-size:1.3em; } }
 </style>
 </head>
@@ -89,7 +101,7 @@ input:focus { border-color:#ffd700; outline:none; }
         <div class="field"><label>Escanteios Mínimos</label><input type="number" id="g-esc-min"></div>
         <div class="field"><label>Diferença Máx (Fav perdendo)</label><input type="number" id="g-diff-max"></div>
         <div class="field"><label>Cartão Vermelho Máx (Fav)</label><input type="number" id="g-red-max"></div>
-        <div class="field"><label>Situação do Favorito</label>
+        <div class="field"><label>Situação da Partida</label>
           <select id="g-situacao-fav">
             <option value="">Desligado (usa de cada mercado)</option>
             <option value="perdendo">Favorito Perdendo</option>
@@ -112,7 +124,17 @@ input:focus { border-color:#ffd700; outline:none; }
         <span class="toggle-slider"></span>
       </label>
     </div>
+    <div class="performance" id="perf-m1"></div>
     <div class="grid" id="fields-m1">
+      <div class="field"><label>Situação da Partida</label>
+        <select id="m1-situacao-fav">
+          <option value="">Global (fallback)</option>
+          <option value="perdendo">Favorito Perdendo</option>
+          <option value="empatando">Favorito Empatando</option>
+          <option value="perdendo_ou_empatando">Fav Perdendo ou Empatando</option>
+          <option value="zebra">Zebra Ganhando</option>
+        </select>
+      </div>
       <div class="field"><label>Minuto Início</label><input type="number" id="m1-inicio"></div>
       <div class="field"><label>Minuto Fim</label><input type="number" id="m1-fim"></div>
       <div class="field"><label>Período (1=HT, 2=FT)</label><input type="number" id="m1-periodo"></div>
@@ -125,15 +147,6 @@ input:focus { border-color:#ffd700; outline:none; }
       <div class="field"><label>Chutes Totais Mín</label><input type="number" id="m1-chutes-tot"></div>
       <div class="field"><label>Ataques Perigosos Mín</label><input type="number" id="m1-atq-perig"></div>
       <div class="field"><label>Cartão Vermelho Máx (Fav)</label><input type="number" id="m1-red-max"></div>
-      <div class="field"><label>Situação do Favorito</label>
-        <select id="m1-situacao-fav">
-          <option value="">Global (fallback)</option>
-          <option value="perdendo">Favorito Perdendo</option>
-          <option value="empatando">Favorito Empatando</option>
-          <option value="perdendo_ou_empatando">Fav Perdendo ou Empatando</option>
-          <option value="zebra">Zebra Ganhando</option>
-        </select>
-      </div>
       <div class="field"><label>Diferença Gols Fav Máx</label><input type="number" id="m1-diff-max"></div>
     </div>
   </div>
@@ -147,7 +160,17 @@ input:focus { border-color:#ffd700; outline:none; }
         <span class="toggle-slider"></span>
       </label>
     </div>
+    <div class="performance" id="perf-m2"></div>
     <div class="grid" id="fields-m2">
+      <div class="field"><label>Situação da Partida</label>
+        <select id="m2-situacao-fav">
+          <option value="">Global (fallback)</option>
+          <option value="perdendo">Favorito Perdendo</option>
+          <option value="empatando">Favorito Empatando</option>
+          <option value="perdendo_ou_empatando">Fav Perdendo ou Empatando</option>
+          <option value="zebra">Zebra Ganhando</option>
+        </select>
+      </div>
       <div class="field"><label>Minuto Início</label><input type="number" id="m2-inicio"></div>
       <div class="field"><label>Minuto Fim</label><input type="number" id="m2-fim"></div>
       <div class="field"><label>Período (1=HT, 2=FT)</label><input type="number" id="m2-periodo"></div>
@@ -160,15 +183,6 @@ input:focus { border-color:#ffd700; outline:none; }
       <div class="field"><label>Chutes Totais Mín</label><input type="number" id="m2-chutes-tot"></div>
       <div class="field"><label>Ataques Perigosos Mín</label><input type="number" id="m2-atq-perig"></div>
       <div class="field"><label>Cartão Vermelho Máx (Fav)</label><input type="number" id="m2-red-max"></div>
-      <div class="field"><label>Situação do Favorito</label>
-        <select id="m2-situacao-fav">
-          <option value="">Global (fallback)</option>
-          <option value="perdendo">Favorito Perdendo</option>
-          <option value="empatando">Favorito Empatando</option>
-          <option value="perdendo_ou_empatando">Fav Perdendo ou Empatando</option>
-          <option value="zebra">Zebra Ganhando</option>
-        </select>
-      </div>
       <div class="field"><label>Diferença Gols Fav Máx</label><input type="number" id="m2-diff-max"></div>
       <div class="field"><label>BTTS Probabilidade Mín (%)</label><input type="number" id="m2-btts-prob"></div>
     </div>
@@ -183,7 +197,17 @@ input:focus { border-color:#ffd700; outline:none; }
         <span class="toggle-slider"></span>
       </label>
     </div>
+    <div class="performance" id="perf-m3"></div>
     <div class="grid" id="fields-m3">
+      <div class="field"><label>Situação da Partida</label>
+        <select id="m3-situacao-fav">
+          <option value="">Global (fallback)</option>
+          <option value="perdendo">Favorito Perdendo</option>
+          <option value="empatando">Favorito Empatando</option>
+          <option value="perdendo_ou_empatando">Fav Perdendo ou Empatando</option>
+          <option value="zebra">Zebra Ganhando</option>
+        </select>
+      </div>
       <div class="field"><label>Minuto Início</label><input type="number" id="m3-inicio"></div>
       <div class="field"><label>Minuto Fim</label><input type="number" id="m3-fim"></div>
       <div class="field"><label>Período (1=HT, 2=FT)</label><input type="number" id="m3-periodo"></div>
@@ -196,15 +220,6 @@ input:focus { border-color:#ffd700; outline:none; }
       <div class="field"><label>Chutes Totais Mín</label><input type="number" id="m3-chutes-tot"></div>
       <div class="field"><label>Ataques Perigosos Mín</label><input type="number" id="m3-atq-perig"></div>
       <div class="field"><label>Cartão Vermelho Máx (Fav)</label><input type="number" id="m3-red-max"></div>
-      <div class="field"><label>Situação do Favorito</label>
-        <select id="m3-situacao-fav">
-          <option value="">Global (fallback)</option>
-          <option value="perdendo">Favorito Perdendo</option>
-          <option value="empatando">Favorito Empatando</option>
-          <option value="perdendo_ou_empatando">Fav Perdendo ou Empatando</option>
-          <option value="zebra">Zebra Ganhando</option>
-        </select>
-      </div>
       <div class="field"><label>Diferença Gols Fav Máx</label><input type="number" id="m3-diff-max"></div>
     </div>
   </div>
@@ -218,7 +233,17 @@ input:focus { border-color:#ffd700; outline:none; }
         <span class="toggle-slider"></span>
       </label>
     </div>
+    <div class="performance" id="perf-m4"></div>
     <div class="grid" id="fields-m4">
+      <div class="field"><label>Situação da Partida</label>
+        <select id="m4-situacao-fav">
+          <option value="">Global (fallback)</option>
+          <option value="perdendo">Favorito Perdendo</option>
+          <option value="empatando">Favorito Empatando</option>
+          <option value="perdendo_ou_empatando">Fav Perdendo ou Empatando</option>
+          <option value="zebra">Zebra Ganhando</option>
+        </select>
+      </div>
       <div class="field"><label>Minuto Início</label><input type="number" id="m4-inicio"></div>
       <div class="field"><label>Minuto Fim</label><input type="number" id="m4-fim"></div>
       <div class="field"><label>Período (1=HT, 2=FT)</label><input type="number" id="m4-periodo"></div>
@@ -231,15 +256,6 @@ input:focus { border-color:#ffd700; outline:none; }
       <div class="field"><label>Chutes Totais Mín</label><input type="number" id="m4-chutes-tot"></div>
       <div class="field"><label>Ataques Perigosos Mín</label><input type="number" id="m4-atq-perig"></div>
       <div class="field"><label>Cartão Vermelho Máx (Fav)</label><input type="number" id="m4-red-max"></div>
-      <div class="field"><label>Situação do Favorito</label>
-        <select id="m4-situacao-fav">
-          <option value="">Global (fallback)</option>
-          <option value="perdendo">Favorito Perdendo</option>
-          <option value="empatando">Favorito Empatando</option>
-          <option value="perdendo_ou_empatando">Fav Perdendo ou Empatando</option>
-          <option value="zebra">Zebra Ganhando</option>
-        </select>
-      </div>
       <div class="field"><label>Diferença Gols Fav Máx</label><input type="number" id="m4-diff-max"></div>
       <div class="field" style="display:flex;flex-direction:row;align-items:center;gap:8px;">
         <label>Linha Dinâmica</label>
@@ -257,15 +273,9 @@ input:focus { border-color:#ffd700; outline:none; }
         <span class="toggle-slider"></span>
       </label>
     </div>
+    <div class="performance" id="perf-m5"></div>
     <div class="grid" id="fields-m5">
-      <div class="field"><label>Minuto Início</label><input type="number" id="m5-inicio"></div>
-      <div class="field"><label>Minuto Fim</label><input type="number" id="m5-fim"></div>
-      <div class="field"><label>Período (1=HT, 2=FT)</label><input type="number" id="m5-periodo"></div>
-      <div class="field"><label>APPM Por Time</label><input type="number" id="m5-appm-time" step="0.1"></div>
-      <div class="field"><label>APPM Total</label><input type="number" id="m5-appm-total" step="0.1"></div>
-      <div class="field"><label>Escanteios Mínimos</label><input type="number" id="m5-esc-min"></div>
-      <div class="field"><label>Cartão Vermelho Máx (Fav)</label><input type="number" id="m5-red-max"></div>
-      <div class="field"><label>Situação do Favorito</label>
+      <div class="field"><label>Situação da Partida</label>
         <select id="m5-situacao-fav">
           <option value="">Global (fallback)</option>
           <option value="perdendo">Favorito Perdendo</option>
@@ -274,6 +284,13 @@ input:focus { border-color:#ffd700; outline:none; }
           <option value="zebra">Zebra Ganhando</option>
         </select>
       </div>
+      <div class="field"><label>Minuto Início</label><input type="number" id="m5-inicio"></div>
+      <div class="field"><label>Minuto Fim</label><input type="number" id="m5-fim"></div>
+      <div class="field"><label>Período (1=HT, 2=FT)</label><input type="number" id="m5-periodo"></div>
+      <div class="field"><label>APPM Por Time</label><input type="number" id="m5-appm-time" step="0.1"></div>
+      <div class="field"><label>APPM Total</label><input type="number" id="m5-appm-total" step="0.1"></div>
+      <div class="field"><label>Escanteios Mínimos</label><input type="number" id="m5-esc-min"></div>
+      <div class="field"><label>Cartão Vermelho Máx (Fav)</label><input type="number" id="m5-red-max"></div>
       <div class="field"><label>Diferença Gols Fav Máx</label><input type="number" id="m5-diff-max"></div>
     </div>
   </div>
@@ -287,15 +304,9 @@ input:focus { border-color:#ffd700; outline:none; }
         <span class="toggle-slider"></span>
       </label>
     </div>
+    <div class="performance" id="perf-m6"></div>
     <div class="grid" id="fields-m6">
-      <div class="field"><label>Minuto Início</label><input type="number" id="m6-inicio"></div>
-      <div class="field"><label>Minuto Fim</label><input type="number" id="m6-fim"></div>
-      <div class="field"><label>Período (1=HT, 2=FT)</label><input type="number" id="m6-periodo"></div>
-      <div class="field"><label>APPM Por Time</label><input type="number" id="m6-appm-time" step="0.1"></div>
-      <div class="field"><label>APPM Total</label><input type="number" id="m6-appm-total" step="0.1"></div>
-      <div class="field"><label>Escanteios Mínimos</label><input type="number" id="m6-esc-min"></div>
-      <div class="field"><label>Cartão Vermelho Máx (Fav)</label><input type="number" id="m6-red-max"></div>
-      <div class="field"><label>Situação do Favorito</label>
+      <div class="field"><label>Situação da Partida</label>
         <select id="m6-situacao-fav">
           <option value="">Global (fallback)</option>
           <option value="perdendo">Favorito Perdendo</option>
@@ -304,6 +315,13 @@ input:focus { border-color:#ffd700; outline:none; }
           <option value="zebra">Zebra Ganhando</option>
         </select>
       </div>
+      <div class="field"><label>Minuto Início</label><input type="number" id="m6-inicio"></div>
+      <div class="field"><label>Minuto Fim</label><input type="number" id="m6-fim"></div>
+      <div class="field"><label>Período (1=HT, 2=FT)</label><input type="number" id="m6-periodo"></div>
+      <div class="field"><label>APPM Por Time</label><input type="number" id="m6-appm-time" step="0.1"></div>
+      <div class="field"><label>APPM Total</label><input type="number" id="m6-appm-total" step="0.1"></div>
+      <div class="field"><label>Escanteios Mínimos</label><input type="number" id="m6-esc-min"></div>
+      <div class="field"><label>Cartão Vermelho Máx (Fav)</label><input type="number" id="m6-red-max"></div>
       <div class="field"><label>Diferença Gols Fav Máx</label><input type="number" id="m6-diff-max"></div>
     </div>
   </div>
@@ -420,8 +438,42 @@ async function loadConfig(){
       sv(pref+'-linha-dinamica',cr.linha_dinamica);
       sv(pref+'-situacao-fav',cr.situacao_favorito);
     });
+    // Carrega performance
+    await carregarPerformance();
     st('✅ Pronto!','ok');
   }catch(e){st('❌ Erro: '+e.message,'err');}
+}
+
+// Mapeamento performance → prefixo
+const PERF_MAP = { 'HT':'m1','BTTS':'m2','OFT':'m3','OVERGOAL':'m4','CORNER_HT':'m5','CORNER_FT':'m6' };
+
+async function carregarPerformance(){
+  try{
+    const r=await fetch(`https://api.github.com/repos/${REPO}/contents/performance.json`,{
+      headers:{'Authorization':'Bearer '+getToken(),'Accept':'application/vnd.github.v3+json'}
+    });
+    if(!r.ok)return;
+    const d=await r.json();
+    const perf=JSON.parse(atob(d.content));
+    Object.entries(PERF_MAP).forEach(([key,pref])=>{
+      const p=perf[key];
+      if(!p)return;
+      const el=document.getElementById('perf-'+pref);
+      if(!el)return;
+      const total=p.total||1;
+      const green=p.green||0;
+      const red=p.red||0;
+      const taxa=total>0?((green/total)*100).toFixed(1):'0.0';
+      const pct_g=total>0?(green/total*100):0;
+      const pct_r=total>0?(red/total*100):0;
+      el.innerHTML=`
+        <div class="bar-wrap"><div class="bar-green" style="width:${pct_g}%"></div><div class="bar-red" style="width:${pct_r}%"></div></div>
+        <div class="stats">
+          <span class="green">🟢${green}</span> <span class="red">🔴${red}</span>
+          <span class="taxa">📊${taxa}%</span> <span class="total">(${total})</span>
+        </div>`;
+    });
+  }catch(e){}
 }
 
 async function salvarConfig(){
