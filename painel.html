@@ -612,6 +612,16 @@ window.addEventListener('beforeinstallprompt',(e)=>{e.preventDefault();deferredP
 document.getElementById('btnInstall').addEventListener('click',async()=>{if(deferredPrompt){deferredPrompt.prompt();const{outcome}=await deferredPrompt.userChoice;if(outcome==='accepted')document.getElementById('btnInstall').style.display='none';deferredPrompt=null;}});
 
 loadConfig();
+// Auto-refresh das barras de desempenho a cada 30 segundos
+function iniciarAutoRefresh() {
+  // Primeira atualização após 5s (tempo pro loadConfig() terminar)
+  setTimeout(() => {
+    carregarPerformance();
+    // Depois a cada 30s
+    setInterval(carregarPerformance, 30000);
+  }, 5000);
+}
+iniciarAutoRefresh();
 </script>
 </body>
 </html>
