@@ -795,8 +795,10 @@ def get_stats_espn(fid_raw, league_slug):
         stats["yellow_cards_a"] = int(away_stats.get("yellow cards", 0))
         stats["red_cards_h"] = int(home_stats.get("red cards", 0))
         stats["red_cards_a"] = int(away_stats.get("red cards", 0))
-        stats["ataques_perigosos_h"] = int(home_stats.get("shots", 0) + home_stats.get("shots on goal", 0) + home_stats.get("corner kicks", 0))
-        stats["ataques_perigosos_a"] = int(away_stats.get("shots", 0) + away_stats.get("shots on goal", 0) + away_stats.get("corner kicks", 0))
+        # ESPN NÃO TEM dados de ataques perigosos reais. Deixar zerado.
+        # Quem fornece ataques_perigosos reais é a Bzzoiro (dangerous_attack).
+        stats["ataques_perigosos_h"] = 0
+        stats["ataques_perigosos_a"] = 0
         stats["faltas_h"] = int(home_stats.get("fouls", 0))
         stats["faltas_a"] = int(away_stats.get("fouls", 0))
 
@@ -1539,7 +1541,13 @@ def run():
                     if league_slug:
                         sa_espn = get_stats_espn(fid_raw, league_slug)
                         if isinstance(sa_espn, dict) and sa_espn.get("chutes_tot_h", 0) > 0:
+                            # Preserva ataques_perigosos da Bzzoiro se já existiam
+                            bzz_ap_h = stats.get("ataques_perigosos_h", 0) if stats else 0
+                            bzz_ap_a = stats.get("ataques_perigosos_a", 0) if stats else 0
                             stats = sa_espn
+                            if bzz_ap_h > 0 or bzz_ap_a > 0:
+                                stats["ataques_perigosos_h"] = bzz_ap_h
+                                stats["ataques_perigosos_a"] = bzz_ap_a
                             print(f"[ESPN-STATS-FALLBACK] Stats ESPN OK: {stats.get('chutes_tot_h')}x{stats.get('chutes_tot_a')} chutes")
                 except Exception as e:
                     print(f"[ESPN-STATS-FALLBACK ERRO] {e}")
@@ -1574,18 +1582,30 @@ def run():
         odd_a = None
         fav_identificado = False
 
-        # PASSO 1: Promiedos odds (vem nos dados do jogo)
+        # PASSO 1: Promiedos odds PRÉ-LIVE (via gamecenter — live_odds.odds.original)
         try:
-            odd_h = j.get("odd_h")
-            odd_a = j.get("odd_a")
-            if odd_h and odd_a and odd_h > 1 and odd_a > 1:
+            prom_odds_h, prom_odds_a, _ = get_odds_promiedos(fid_raw)
+            if prom_odds_h and prom_odds_a and prom_odds_h > 1 and prom_odds_a > 1:
+                odd_h, odd_a = prom_odds_h, prom_odds_a
                 fav_final = "h" if odd_h <= odd_a else "a"
                 fav_identificado = True
-                print(f"[ODDS-PROM] {h} x {a} — Casa:{odd_h:.2f} Fora:{odd_a:.2f} → Fav:{fav_final}")
+                print(f"[ODDS-PRE-LIVE] {h} x {a} — Casa:{odd_h:.2f} Fora:{odd_a:.2f} → Fav:{fav_final}")
         except Exception as e:
-            print(f"[ODDS-PROM ERRO] {e}")
+            print(f"[ODDS-PRE-LIVE ERRO] {e}")
 
-        # PASSO 2: ESPN odds (DraftKings do summary) — se Promiedos não retornou
+        # PASSO 2: Fallback — main_odds do games/today (se não achou pré-live)
+        if not fav_identificado:
+            try:
+                odd_h = j.get("odd_h")
+                odd_a = j.get("odd_a")
+                if odd_h and odd_a and odd_h > 1 and odd_a > 1:
+                    fav_final = "h" if odd_h <= odd_a else "a"
+                    fav_identificado = True
+                    print(f"[ODDS-PROM-FALLBACK] {h} x {a} — Casa:{odd_h:.2f} Fora:{odd_a:.2f} → Fav:{fav_final}")
+            except Exception as e:
+                print(f"[ODDS-PROM-ERRO] {e}")
+
+        # PASSO 3: ESPN odds (DraftKings do summary) — último fallback
         if not fav_identificado:
             if stats and stats.get("odd_h") and stats.get("odd_a"):
                 odd_h_s, odd_a_s = stats["odd_h"], stats["odd_a"]
