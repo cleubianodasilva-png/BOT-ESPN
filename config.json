@@ -15,7 +15,8 @@
     "max_red_card_fav": 0,
     "btts_probabilidade_min": 50
   },
-  "_comentario_geral": "Se 'ativo: false', o bot ignora os valores globais e usa só os critérios de cada mercado.",
+  "situacao_favorito": "perdendo_ou_empatando",
+  "_comentario_geral": "Se 'ativo: false', o bot ignora os valores globais e usa só os critérios de cada mercado. situacao_favorito: perdendo | empatando | perdendo_ou_empatando | zebra",
   "mercados": {
     "over_05_ht": {
       "ativo": true,
@@ -25,6 +26,7 @@
       "minuto_fim": 27,
       "placar_valido": "0x0",
       "criterios": {
+        "situacao_favorito": "empatando",
         "appm_min_por_time": 0.7,
         "appm_min_total": 1.4,
         "media_gols_partida_min": 2.2,
@@ -44,6 +46,7 @@
       "minuto_fim": 75,
       "placar_valido": "1x0_0x1",
       "criterios": {
+        "situacao_favorito": "perdendo",
         "appm_min_por_time": 0.7,
         "appm_min_total": 1.4,
         "media_gols_partida_min": 2.2,
@@ -64,6 +67,7 @@
       "minuto_fim": 75,
       "placar_valido": "1x0_0x1",
       "criterios": {
+        "situacao_favorito": "perdendo",
         "appm_min_por_time": 0.7,
         "appm_min_total": 1.4,
         "media_gols_partida_min": 2.2,
@@ -83,6 +87,7 @@
       "minuto_fim": 75,
       "placares_validos": "0x0_1x1_0x1_1x0",
       "criterios": {
+        "situacao_favorito": "perdendo_ou_empatando",
         "appm_min_por_time": 0.7,
         "appm_min_total": 1.4,
         "media_gols_partida_min": 2.2,
@@ -102,6 +107,7 @@
       "minuto_inicio": 32,
       "minuto_fim": 38,
       "criterios": {
+        "situacao_favorito": "perdendo_ou_empatando",
         "appm_min_por_time": 0.7,
         "appm_min_total": 1.4,
         "escanteios_minimos": 2,
@@ -116,6 +122,7 @@
       "minuto_inicio": 82,
       "minuto_fim": 88,
       "criterios": {
+        "situacao_favorito": "perdendo_ou_empatando",
         "appm_min_por_time": 0.7,
         "appm_min_total": 1.4,
         "escanteios_minimos": 2,
