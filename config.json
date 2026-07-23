@@ -1,6 +1,7 @@
 {
   "_comentario": "Configuração do Bot Máquina de Greens VIP. Edite pelo painel ou manualmente.",
   "geral": {
+    "ativo": false,
     "appm_min_por_time": 0.7,
     "appm_min_total": 1.4,
     "media_gols_partida_min": 2.2,
@@ -14,6 +15,7 @@
     "max_red_card_fav": 0,
     "btts_probabilidade_min": 50
   },
+  "_comentario_geral": "Se 'ativo: false', o bot ignora os valores globais e usa só os critérios de cada mercado.",
   "mercados": {
     "over_05_ht": {
       "ativo": true,
