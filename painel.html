@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Máquina de Greens VIP - Painel</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f0f1a; color: #e0e0e0; min-height: 100vh; }
+.container { max-width: 900px; margin: 0 auto; padding: 20px; }
+h1 { text-align: center; color: #9b59b6; font-size: 1.5em; margin: 20px 0; }
+h2 { color: #bb86fc; font-size: 1.1em; margin: 20px 0 10px; border-bottom: 1px solid #333; padding-bottom: 5px; }
+h3 { color: #e0e0e0; font-size: 0.95em; margin: 15px 0 8px; }
+.card { background: #1a1a2e; border-radius: 10px; padding: 20px; margin-bottom: 15px; border: 1px solid #2a2a3e; }
+.card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+.card-header h3 { margin: 0; }
+.toggle { position: relative; display: inline-block; width: 50px; height: 26px; }
+.toggle input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #333; transition: .3s; border-radius: 26px; }
+.slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background: white; transition: .3s; border-radius: 50%; }
+input:checked + .slider { background: #9b59b6; }
+input:checked + .slider:before { transform: translateX(24px); }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 10px 0; }
+.field { margin-bottom: 10px; }
+.field label { display: block; font-size: 0.8em; color: #888; margin-bottom: 4px; }
+.field input, .field select { width: 100%; padding: 8px 10px; border: 1px solid #333; border-radius: 6px; background: #12122a; color: #e0e0e0; font-size: 0.9em; }
+.field input:focus, .field select:focus { outline: none; border-color: #9b59b6; }
+.field input[type="number"] { -moz-appearance: textfield; }
+.status-bar { background: #1a1a2e; border: 1px solid #2a2a3e; border-radius: 8px; padding: 12px 16px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
+.status-ok { color: #4caf50; }
+.status-loading { color: #ff9800; }
+.status-err { color: #f44336; }
+.btn { padding: 10px 24px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9em; font-weight: 600; transition: all .2s; }
+.btn-primary { background: #9b59b6; color: #fff; }
+.btn-primary:hover { background: #8e44ad; }
+.btn-primary:disabled { background: #555; cursor: not-allowed; }
+.btn-secondary { background: #2a2a3e; color: #e0e0e0; }
+.btn-secondary:hover { background: #3a3a4e; }
+.actions { display: flex; gap: 10px; justify-content: center; margin-top: 20px; }
+.toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #333; color: #fff; padding: 12px 24px; border-radius: 8px; display: none; z-index: 999; font-size: 0.9em; }
+.toast.show { display: block; }
+.toast.success { background: #1b5e20; }
+.toast.error { background: #b71c1c; }
+.footer { text-align: center; color: #555; font-size: 0.8em; margin: 30px 0; }
+.info-pill { background: #2a2a3e; color: #888; padding: 2px 8px; border-radius: 10px; font-size: 0.75em; }
+.section-desc { font-size: 0.8em; color: #666; margin-bottom: 10px; }
+@media (max-width: 600px) { .row { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>⚙️ Máquina de Greens VIP</h1>
+  <p style="text-align:center;color:#666;font-size:0.85em;margin-bottom:20px;">Painel de Controle — Configuração dos Mercados</p>
+
+  <div class="status-bar" id="statusBar">
+    <span id="statusMsg">🔄 Carregando configurações...</span>
+    <span id="statusDetail" class="status-loading">Aguardando</span>
+  </div>
+
+  <!-- CONFIG GLOBAL -->
+  <div class="card">
+    <h2>📊 Parâmetros Globais</h2>
+    <div class="section-desc">Aplicados a todos os mercados de gol. Escanteios são livres.</div>
+    <div class="row">
+      <div class="field">
+        <label>APPM Mínimo por Time</label>
+        <input type="number" id="appm_por_time" step="0.05" min="0" max="5">
+      </div>
+      <div class="field">
+        <label>APPM Mínimo Total</label>
+        <input type="number" id="appm_total" step="0.05" min="0" max="5">
+      </div>
+    </div>
+    <div class="field">
+      <label>Média de Gols Mínima (últimos 10 jogos)</label>
+      <input type="number" id="media_gols" step="0.1" min="0" max="10">
+    </div>
+  </div>
+
+  <!-- MERCADO 1: OVER 0.5 HT -->
+  <div class="card" id="m-over-05-ht">
+    <div class="card-header">
+      <h3>⚽️🔥 Over 0.5 Gols HT 🔥⚽️</h3>
+      <label class="toggle"><input type="checkbox" id="ht-ativo"><span class="slider"></span></label>
+    </div>
+    <div class="row">
+      <div class="field"><label>Minuto Início</label><input type="number" id="ht-inicio" min="0" max="45"></div>
+      <div class="field"><label>Minuto Fim</label><input type="number" id="ht-fim" min="0" max="45"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>Período</label><select id="ht-periodo"><option value="1">1º Tempo (HT)</option><option value="2">2º Tempo (FT)</option></select></div>
+      <div class="field"><label>Placar Válido</label><select id="ht-placar"><option value="0x0">0x0</option><option value="1x0_0x1">1x0 ou 0x1</option><option value="0x0_1x1_0x1_1x0">0x0, 1x1, 0x1, 1x0</option></select></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>Usar Média de Gols</label><select id="ht-media"><option value="true">Sim</option><option value="false">Não</option></select></div>
+      <div class="field"><label>Bloquear Vermelho Fav</label><select id="ht-vermelho"><option value="true">Sim</option><option value="false">Não</option></select></div>
+    </div>
+  </div>
+
+  <!-- MERCADO 2: AMBAS MARCAM -->
+  <div class="card" id="m-btts">
+    <div class="card-header">
+      <h3>⚽️🔥 Ambas Marcam 🔥⚽️</h3>
+      <label class="toggle"><input type="checkbox" id="btts-ativo"><span class="slider"></span></label>
+    </div>
+    <div class="row">
+      <div class="field"><label>Minuto Início</label><input type="number" id="btts-inicio" min="0" max="90"></div>
+      <div class="field"><label>Minuto Fim</label><input type="number" id="btts-fim" min="0" max="90"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>Período</label><select id="btts-periodo"><option value="2">2º Tempo (FT)</option><option value="1">1º Tempo (HT)</option></select></div>
+      <div class="field"><label>Usar Média de Gols</label><select id="btts-media"><option value="true">Sim</option><option value="false">Não</option></select></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>Bloquear Vermelho Fav</label><select id="btts-vermelho"><option value="true">Sim</option><option value="false">Não</option></select></div>
+    </div>
+  </div>
+
+  <!-- MERCADO 3: OVER 1.5 FT -->
+  <div class="card" id="m-oft">
+    <div class="card-header">
+      <h3>⚽️🔥 Over 1.5 Gols FT 🔥⚽️</h3>
+      <label class="toggle"><input type="checkbox" id="oft-ativo"><span class="slider"></span></label>
+    </div>
+    <div class="row">
+      <div class="field"><label>Minuto Início</label><input type="number" id="oft-inicio" min="0" max="90"></div>
+      <div class="field"><label>Minuto Fim</label><input type="number" id="oft-fim" min="0" max="90"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>Período</label><select id="oft-periodo"><option value="2">2º Tempo (FT)</option><option value="1">1º Tempo (HT)</option></select></div>
+      <div class="field"><label>Usar Média de Gols</label><select id="oft-media"><option value="true">Sim</option><option value="false">Não</option></select></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>Bloquear Vermelho Fav</label><select id="oft-vermelho"><option value="true">Sim</option><option value="false">Não</option></select></div>
+    </div>
+  </div>
+
+  <!-- MERCADO 4: OVER GOL PARTIDA -->
+  <div class="card" id="m-overgoal">
+    <div class="card-header">
+      <h3>⚽️🔥 Over Gol Partida 🔥⚽️</h3>
+      <label class="toggle"><input type="checkbox" id="og-ativo"><span class="slider"></span></label>
+    </div>
+    <div class="row">
+      <div class="field"><label>Minuto Início</label><input type="number" id="og-inicio" min="0" max="90"></div>
+      <div class="field"><label>Minuto Fim</label><input type="number" id="og-fim" min="0" max="90"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>Período</label><select id="og-periodo"><option value="2">2º Tempo (FT)</option><option value="1">1º Tempo (HT)</option></select></div>
+      <div class="field"><label>Usar Média de Gols</label><select id="og-media"><option value="true">Sim</option><option value="false">Não</option></select></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>Bloquear Vermelho Fav</label><select id="og-vermelho"><option value="true">Sim</option><option value="false">Não</option></select></div>
+    </div>
+  </div>
+
+  <!-- MERCADO 5: ESCANTEIO HT -->
+  <div class="card" id="m-cht">
+    <div class="card-header">
+      <h3>🚩🔥 Escanteio HT 🔥🚩</h3>
+      <label class="toggle"><input type="checkbox" id="cht-ativo"><span class="slider"></span></label>
+    </div>
+    <div class="section-desc">Escanteios — não usa filtro de média de gols</div>
+    <div class="row">
+      <div class="field"><label>Minuto Início</label><input type="number" id="cht-inicio" min="0" max="45"></div>
+      <div class="field"><label>Minuto Fim</label><input type="number" id="cht-fim" min="0" max="45"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>Período</label><select id="cht-periodo"><option value="1">1º Tempo (HT)</option><option value="2">2º Tempo (FT)</option></select></div>
+      <div class="field"><label>Bloquear Vermelho Fav</label><select id="cht-vermelho"><option value="true">Sim</option><option value="false">Não</option></select></div>
+    </div>
+  </div>
+
+  <!-- MERCADO 6: ESCANTEIO FT -->
+  <div class="card" id="m-cft">
+    <div class="card-header">
+      <h3>🚩🔥 Escanteio FT 🔥🚩</h3>
+      <label class="toggle"><input type="checkbox" id="cft-ativo"><span class="slider"></span></label>
+    </div>
+    <div class="section-desc">Escanteios — não usa filtro de média de gols</div>
+    <div class="row">
+      <div class="field"><label>Minuto Início</label><input type="number" id="cft-inicio" min="0" max="90"></div>
+      <div class="field"><label>Minuto Fim</label><input type="number" id="cft-fim" min="0" max="90"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>Período</label><select id="cft-periodo"><option value="2">2º Tempo (FT)</option><option value="1">1º Tempo (HT)</option></select></div>
+      <div class="field"><label>Bloquear Vermelho Fav</label><select id="cft-vermelho"><option value="true">Sim</option><option value="false">Não</option></select></div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn-secondary" onclick="loadConfig()">🔄 Recarregar</button>
+    <button class="btn btn-primary" id="btnSalvar" onclick="salvarConfig()">💾 Salvar Configuração</button>
+  </div>
+
+  <div class="footer">
+    Máquina de Greens VIP — Painel v1.0<br>
+    As alterações salvam direto no config.json do repositório GitHub.
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const REPO = 'cleubianodasilva-png/maquina-de-greens-vip';
+const CONFIG_PATH = 'config.json';
+
+function getToken() {
+  let t = localStorage.getItem('gh_token');
+  if (!t) {
+    t = prompt('🔑 Digite seu token do GitHub (GH_PAT):\n(Será salvo no navegador)');
+    if (t) localStorage.setItem('gh_token', t);
+  }
+  return t;
+}
+
+function status(msg, type) {
+  document.getElementById('statusMsg').textContent = msg;
+  const el = document.getElementById('statusDetail');
+  el.textContent = type === 'ok' ? '✅ Conectado' : type === 'err' ? '❌ Erro' : '🔄 Carregando';
+  el.className = 'status-' + (type === 'ok' ? 'ok' : type === 'err' ? 'err' : 'loading');
+}
+
+function toast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + (type || '');
+  setTimeout(() => { t.className = 'toast'; }, 3000);
+}
+
+function getVal(id) {
+  const el = document.getElementById(id);
+  if (el.type === 'checkbox') return el.checked;
+  if (el.type === 'number') return parseFloat(el.value) || 0;
+  if (el.tagName === 'SELECT') {
+    if (el.value === 'true') return true;
+    if (el.value === 'false') return false;
+    return el.value;
+  }
+  return el.value;
+}
+
+function setVal(id, val) {
+  const el = document.getElementById(id);
+  if (el.type === 'checkbox') { el.checked = !!val; return; }
+  if (el.tagName === 'SELECT') {
+    el.value = val === true ? 'true' : val === false ? 'false' : String(val);
+    return;
+  }
+  el.value = val;
+}
+
+function camposParaConfig() {
+  return {
+    geral: {
+      appm_min_por_time: getVal('appm_por_time'),
+      appm_min_total: getVal('appm_total'),
+      media_gols_minima: getVal('media_gols')
+    },
+    mercados: {
+      over_05_ht: {
+        ativo: getVal('ht-ativo'),
+        periodo: parseInt(getVal('ht-periodo')),
+        minuto_inicio: parseInt(getVal('ht-inicio')),
+        minuto_fim: parseInt(getVal('ht-fim')),
+        placar_valido: getVal('ht-placar'),
+        favorito_empatando: true,
+        bloquear_vermelho_fav: getVal('ht-vermelho'),
+        usar_media_gols: getVal('ht-media')
+      },
+      ambas_marcam: {
+        ativo: getVal('btts-ativo'),
+        periodo: parseInt(getVal('btts-periodo')),
+        minuto_inicio: parseInt(getVal('btts-inicio')),
+        minuto_fim: parseInt(getVal('btts-fim')),
+        placar_valido: '1x0_0x1',
+        favorito_perdendo_1: true,
+        bloquear_vermelho_fav: getVal('btts-vermelho'),
+        usar_media_gols: getVal('btts-media')
+      },
+      over_15_ft: {
+        ativo: getVal('oft-ativo'),
+        periodo: parseInt(getVal('oft-periodo')),
+        minuto_inicio: parseInt(getVal('oft-inicio')),
+        minuto_fim: parseInt(getVal('oft-fim')),
+        placar_valido: '1x0_0x1',
+        favorito_perdendo_1: true,
+        bloquear_vermelho_fav: getVal('oft-vermelho'),
+        usar_media_gols: getVal('oft-media')
+      },
+      over_gol_partida: {
+        ativo: getVal('og-ativo'),
+        periodo: parseInt(getVal('og-periodo')),
+        minuto_inicio: parseInt(getVal('og-inicio')),
+        minuto_fim: parseInt(getVal('og-fim')),
+        placares_validos: '0x0_1x1_0x1_1x0',
+        favorito_empatando_ou_perdendo_1: true,
+        bloquear_vermelho_fav: getVal('og-vermelho'),
+        usar_media_gols: getVal('og-media'),
+        linha_dinamica: true
+      },
+      escanteio_ht: {
+        ativo: getVal('cht-ativo'),
+        periodo: parseInt(getVal('cht-periodo')),
+        minuto_inicio: parseInt(getVal('cht-inicio')),
+        minuto_fim: parseInt(getVal('cht-fim')),
+        favorito_empatando_ou_perdendo_1: true,
+        bloquear_vermelho_fav: getVal('cht-vermelho'),
+        usar_media_gols: false
+      },
+      escanteio_ft: {
+        ativo: getVal('cft-ativo'),
+        periodo: parseInt(getVal('cft-periodo')),
+        minuto_inicio: parseInt(getVal('cft-inicio')),
+        minuto_fim: parseInt(getVal('cft-fim')),
+        favorito_empatando_ou_perdendo_1: true,
+        bloquear_vermelho_fav: getVal('cft-vermelho'),
+        usar_media_gols: false
+      }
+    }
+  };
+}
+
+function configParaCampos(cfg) {
+  const g = cfg.geral || {};
+  setVal('appm_por_time', g.appm_min_por_time ?? 0.7);
+  setVal('appm_total', g.appm_min_total ?? 1.4);
+  setVal('media_gols', g.media_gols_minima ?? 2.2);
+
+  const m = cfg.mercados || {};
+  const ht = m.over_05_ht || {};
+  setVal('ht-ativo', ht.ativo ?? true);
+  setVal('ht-periodo', ht.periodo ?? 1);
+  setVal('ht-inicio', ht.minuto_inicio ?? 15);
+  setVal('ht-fim', ht.minuto_fim ?? 27);
+  setVal('ht-placar', ht.placar_valido ?? '0x0');
+  setVal('ht-vermelho', ht.bloquear_vermelho_fav ?? true);
+  setVal('ht-media', ht.usar_media_gols ?? true);
+
+  const btts = m.ambas_marcam || {};
+  setVal('btts-ativo', btts.ativo ?? true);
+  setVal('btts-periodo', btts.periodo ?? 2);
+  setVal('btts-inicio', btts.minuto_inicio ?? 55);
+  setVal('btts-fim', btts.minuto_fim ?? 75);
+  setVal('btts-vermelho', btts.bloquear_vermelho_fav ?? true);
+  setVal('btts-media', btts.usar_media_gols ?? true);
+
+  const oft = m.over_15_ft || {};
+  setVal('oft-ativo', oft.ativo ?? true);
+  setVal('oft-periodo', oft.periodo ?? 2);
+  setVal('oft-inicio', oft.minuto_inicio ?? 55);
+  setVal('oft-fim', oft.minuto_fim ?? 75);
+  setVal('oft-vermelho', oft.bloquear_vermelho_fav ?? true);
+  setVal('oft-media', oft.usar_media_gols ?? true);
+
+  const og = m.over_gol_partida || {};
+  setVal('og-ativo', og.ativo ?? true);
+  setVal('og-periodo', og.periodo ?? 2);
+  setVal('og-inicio', og.minuto_inicio ?? 55);
+  setVal('og-fim', og.minuto_fim ?? 75);
+  setVal('og-vermelho', og.bloquear_vermelho_fav ?? true);
+  setVal('og-media', og.usar_media_gols ?? true);
+
+  const cht = m.escanteio_ht || {};
+  setVal('cht-ativo', cht.ativo ?? true);
+  setVal('cht-periodo', cht.periodo ?? 1);
+  setVal('cht-inicio', cht.minuto_inicio ?? 32);
+  setVal('cht-fim', cht.minuto_fim ?? 38);
+  setVal('cht-vermelho', cht.bloquear_vermelho_fav ?? true);
+
+  const cft = m.escanteio_ft || {};
+  setVal('cft-ativo', cft.ativo ?? true);
+  setVal('cft-periodo', cft.periodo ?? 2);
+  setVal('cft-inicio', cft.minuto_inicio ?? 82);
+  setVal('cft-fim', cft.minuto_fim ?? 88);
+  setVal('cft-vermelho', cft.bloquear_vermelho_fav ?? true);
+}
+
+async function loadConfig() {
+  status('🔄 Carregando configurações...', 'loading');
+  const btn = document.getElementById('btnSalvar');
+  btn.disabled = true;
+  try {
+    const TOKEN = getToken();
+    if (!TOKEN) { status('❌ Token necessário', 'err'); btn.disabled = false; return; }
+    const r = await fetch(`https://api.github.com/repos/${REPO}/contents/${CONFIG_PATH}`, {
+      headers: { 'Authorization': `Bearer ${TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+    });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const d = await r.json();
+    const content = atob(d.content);
+    const cfg = JSON.parse(content);
+    window._configSha = d.sha;
+    configParaCampos(cfg);
+    status('✅ Configurações carregadas', 'ok');
+    toast('Configurações carregadas com sucesso!', 'success');
+    btn.disabled = false;
+  } catch (e) {
+    status('❌ Erro ao carregar: ' + e.message, 'err');
+    toast('Erro ao carregar configurações', 'error');
+    btn.disabled = false;
+  }
+}
+
+async function salvarConfig() {
+  const btn = document.getElementById('btnSalvar');
+  btn.disabled = true;
+  btn.textContent = '💾 Salvando...';
+  status('💾 Salvando configurações...', 'loading');
+
+  try {
+    const TOKEN = getToken();
+    if (!TOKEN) { status('❌ Token necessário', 'err'); btn.disabled = false; btn.textContent = '💾 Salvar Configuração'; return; }
+    const cfg = camposParaConfig();
+    const content = btoa(unescape(encodeURIComponent(JSON.stringify(cfg, null, 2))));
+
+    const payload = {
+      message: 'painel: atualiza config.json',
+      content: content,
+      sha: window._configSha
+    };
+
+    const r = await fetch(`https://api.github.com/repos/${REPO}/contents/${CONFIG_PATH}`, {
+      method: 'PUT',
+      headers: { 'Authorization': `Bearer ${TOKEN}`, 'Content-Type': 'application/json', 'Accept': 'application/vnd.github.v3+json' },
+      body: JSON.stringify(payload)
+    });
+
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.message || `HTTP ${r.status}`);
+
+    window._configSha = d.content.sha;
+    status('✅ Salvo com sucesso!', 'ok');
+    toast('✅ Configurações salvas! O bot vai usar os novos parâmetros na próxima execução.', 'success');
+    btn.textContent = '💾 Salvar Configuração';
+    btn.disabled = false;
+  } catch (e) {
+    status('❌ Erro ao salvar: ' + e.message, 'err');
+    toast('❌ Erro ao salvar: ' + e.message, 'error');
+    btn.textContent = '💾 Salvar Configuração';
+    btn.disabled = false;
+  }
+}
+
+// Carrega ao abrir
+loadConfig();
+</script>
+</body>
+</html>
