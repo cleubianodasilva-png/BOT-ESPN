@@ -1,6 +1,5 @@
 {
-  "_comentario": "Configuração completa do Bot Máquina de Greens VIP. Todos os critérios que a API fornece estão aqui para edição.",
-
+  "_comentario": "Configuração do Bot Máquina de Greens VIP. Edite pelo painel ou manualmente.",
   "geral": {
     "appm_min_por_time": 0.7,
     "appm_min_total": 1.4,
@@ -9,13 +8,12 @@
     "media_gols_ft_min": 1.2,
     "chutes_alvo_min": 3,
     "chutes_totais_min": 6,
-    "escanteios_minimos": 2,
     "ataques_perigosos_min": 15,
-    "max_red_card_fav": 0,
+    "escanteios_minimos": 2,
     "diferenca_gols_fav_max": 1,
+    "max_red_card_fav": 0,
     "btts_probabilidade_min": 50
   },
-
   "mercados": {
     "over_05_ht": {
       "ativo": true,
@@ -23,18 +21,17 @@
       "periodo": 1,
       "minuto_inicio": 15,
       "minuto_fim": 27,
+      "placar_valido": "0x0",
       "criterios": {
-        "placar": "0x0",
-        "favorito_empatando": true,
-        "max_red_card_fav": 0,
-        "diferenca_gols_fav_max": 0,
         "appm_min_por_time": 0.7,
         "appm_min_total": 1.4,
         "media_gols_partida_min": 2.2,
         "media_gols_ht_min": 1.0,
         "chutes_alvo_min": 3,
         "chutes_totais_min": 6,
-        "ataques_perigosos_min": 15
+        "ataques_perigosos_min": 15,
+        "max_red_card_fav": 0,
+        "diferenca_gols_fav_max": 0
       }
     },
     "ambas_marcam": {
@@ -43,11 +40,8 @@
       "periodo": 2,
       "minuto_inicio": 55,
       "minuto_fim": 75,
+      "placar_valido": "1x0_0x1",
       "criterios": {
-        "placar": "1x0_0x1",
-        "favorito_perdendo_1": true,
-        "max_red_card_fav": 0,
-        "diferenca_gols_fav_max": 1,
         "appm_min_por_time": 0.7,
         "appm_min_total": 1.4,
         "media_gols_partida_min": 2.2,
@@ -55,6 +49,8 @@
         "chutes_alvo_min": 3,
         "chutes_totais_min": 6,
         "ataques_perigosos_min": 15,
+        "max_red_card_fav": 0,
+        "diferenca_gols_fav_max": 1,
         "btts_probabilidade_min": 50
       }
     },
@@ -64,18 +60,17 @@
       "periodo": 2,
       "minuto_inicio": 55,
       "minuto_fim": 75,
+      "placar_valido": "1x0_0x1",
       "criterios": {
-        "placar": "1x0_0x1",
-        "favorito_perdendo_1": true,
-        "max_red_card_fav": 0,
-        "diferenca_gols_fav_max": 1,
         "appm_min_por_time": 0.7,
         "appm_min_total": 1.4,
         "media_gols_partida_min": 2.2,
         "media_gols_ft_min": 1.2,
         "chutes_alvo_min": 3,
         "chutes_totais_min": 6,
-        "ataques_perigosos_min": 15
+        "ataques_perigosos_min": 15,
+        "max_red_card_fav": 0,
+        "diferenca_gols_fav_max": 1
       }
     },
     "over_gol_partida": {
@@ -84,11 +79,8 @@
       "periodo": 2,
       "minuto_inicio": 55,
       "minuto_fim": 75,
+      "placares_validos": "0x0_1x1_0x1_1x0",
       "criterios": {
-        "placares_validos": "0x0_1x1_0x1_1x0",
-        "favorito_empatando_ou_perdendo_1": true,
-        "max_red_card_fav": 0,
-        "diferenca_gols_fav_max": 1,
         "appm_min_por_time": 0.7,
         "appm_min_total": 1.4,
         "media_gols_partida_min": 2.2,
@@ -96,6 +88,8 @@
         "chutes_alvo_min": 3,
         "chutes_totais_min": 6,
         "ataques_perigosos_min": 15,
+        "max_red_card_fav": 0,
+        "diferenca_gols_fav_max": 1,
         "linha_dinamica": true
       }
     },
@@ -106,12 +100,11 @@
       "minuto_inicio": 32,
       "minuto_fim": 38,
       "criterios": {
-        "favorito_empatando_ou_perdendo_1": true,
-        "max_red_card_fav": 0,
-        "diferenca_gols_fav_max": 1,
         "appm_min_por_time": 0.7,
         "appm_min_total": 1.4,
-        "escanteios_minimos": 2
+        "escanteios_minimos": 2,
+        "max_red_card_fav": 0,
+        "diferenca_gols_fav_max": 1
       }
     },
     "escanteio_ft": {
@@ -121,12 +114,11 @@
       "minuto_inicio": 82,
       "minuto_fim": 88,
       "criterios": {
-        "favorito_empatando_ou_perdendo_1": true,
-        "max_red_card_fav": 0,
-        "diferenca_gols_fav_max": 1,
         "appm_min_por_time": 0.7,
         "appm_min_total": 1.4,
-        "escanteios_minimos": 2
+        "escanteios_minimos": 2,
+        "max_red_card_fav": 0,
+        "diferenca_gols_fav_max": 1
       }
     }
   }
