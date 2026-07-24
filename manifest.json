@@ -1,15 +1,29 @@
 {
-  "name": "M\u00c1QUINA DE GREENS VIP",
-  "short_name": "GREENS VIP",
+  "name": "Máquina de Greens VIP",
+  "short_name": "Greens VIP",
+  "description": "Painel de controle dos robôs de sinais",
   "start_url": "index.html",
   "display": "standalone",
   "background_color": "#1a1a2e",
-  "theme_color": "#1a1a2e",
+  "theme_color": "#d48821",
+  "orientation": "portrait",
   "icons": [
     {
-      "src": "icon.jpg",
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-1024.png",
       "sizes": "1024x1024",
-      "type": "image/jpeg",
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ]
