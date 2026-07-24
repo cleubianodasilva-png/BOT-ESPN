@@ -2373,15 +2373,31 @@ def run():
             cht_appm_time = _crit(M_CHT, GERAL, "appm_min_por_time", 0.7)
             cht_appm_total = _crit(M_CHT, GERAL, "appm_min_total", 1.4)
             cht_escanteios = _crit(M_CHT, GERAL, "escanteios_minimos", 2)
+            cht_chutes_alvo = _crit(M_CHT, GERAL, "chutes_alvo_min", 0)
+            cht_chutes_tot = _crit(M_CHT, GERAL, "chutes_totais_min", 0)
+            cht_atq = _crit(M_CHT, GERAL, "ataques_perigosos_min", 0)
+            cht_media = _crit(M_CHT, GERAL, "media_gols_partida_min", 0)
             cht_red_max = _crit(M_CHT, GERAL, "max_red_card_fav", 0)
             cht_appm_ok = _appm_h >= cht_appm_time or _appm_a >= cht_appm_time or _appm_total >= cht_appm_total
             cht_esc_ok = (_escanteios_h + _escanteios_a) >= cht_escanteios if _escanteios_h >= 0 and _escanteios_a >= 0 else True
+            cht_chutes_alvo_ok = (_chutes_alvo_h + _chutes_alvo_a) >= cht_chutes_alvo if cht_chutes_alvo > 0 else True
+            cht_chutes_tot_ok = (_chutes_tot_h + _chutes_tot_a) >= cht_chutes_tot if cht_chutes_tot > 0 else True
+            cht_atq_ok = (_ataques_perigosos_h + _ataques_perigosos_a) >= cht_atq if cht_atq > 0 else True
+            cht_media_ok = media_hist >= cht_media if cht_media > 0 and media_hist >= 0 else True
             if not _situacao_fav_ok(M_CHT, GERAL, fav_gols, adv_gols):
                 print(f"[DIAG-CORNER-HT-BARRA] {h} x {a} — situação do favorito não atende critério (fav_gols={fav_gols} adv={adv_gols}), pulando")
             elif red_fav > cht_red_max:
                 print(f"[DIAG-CORNER-HT-BARRA] {h} x {a} — favorito com cartão vermelho ({red_fav} > {cht_red_max}), pulando")
             elif not cht_appm_ok:
                 print(f"[DIAG-CORNER-HT-BARRA] {h} x {a} — APPM insuficiente (casa={_appm_h} fora={_appm_a} total={_appm_total}), pulando")
+            elif not cht_chutes_alvo_ok:
+                print(f"[DIAG-CORNER-HT-BARRA] {h} x {a} — chutes no alvo insuficientes ({_chutes_alvo_h+_chutes_alvo_a} < {cht_chutes_alvo}), pulando")
+            elif not cht_chutes_tot_ok:
+                print(f"[DIAG-CORNER-HT-BARRA] {h} x {a} — chutes totais insuficientes ({_chutes_tot_h+_chutes_tot_a} < {cht_chutes_tot}), pulando")
+            elif not cht_atq_ok:
+                print(f"[DIAG-CORNER-HT-BARRA] {h} x {a} — ataques perigosos insuficientes ({_ataques_perigosos_h+_ataques_perigosos_a} < {cht_atq}), pulando")
+            elif not cht_media_ok:
+                print(f"[DIAG-CORNER-HT-BARRA] {h} x {a} — média histórica {media_hist:.1f} < {cht_media}, pulando")
             elif not cht_esc_ok:
                 print(f"[DIAG-CORNER-HT-BARRA] {h} x {a} — escanteios insuficientes ({_escanteios_h+_escanteios_a} < {cht_escanteios}), pulando")
             else:
@@ -2410,15 +2426,31 @@ def run():
             cft_appm_time = _crit(M_CFT, GERAL, "appm_min_por_time", 0.7)
             cft_appm_total = _crit(M_CFT, GERAL, "appm_min_total", 1.4)
             cft_escanteios = _crit(M_CFT, GERAL, "escanteios_minimos", 2)
+            cft_chutes_alvo = _crit(M_CFT, GERAL, "chutes_alvo_min", 0)
+            cft_chutes_tot = _crit(M_CFT, GERAL, "chutes_totais_min", 0)
+            cft_atq = _crit(M_CFT, GERAL, "ataques_perigosos_min", 0)
+            cft_media = _crit(M_CFT, GERAL, "media_gols_partida_min", 0)
             cft_red_max = _crit(M_CFT, GERAL, "max_red_card_fav", 0)
             cft_appm_ok = _appm_h >= cft_appm_time or _appm_a >= cft_appm_time or _appm_total >= cft_appm_total
             cft_esc_ok = (_escanteios_h + _escanteios_a) >= cft_escanteios if _escanteios_h >= 0 and _escanteios_a >= 0 else True
+            cft_chutes_alvo_ok = (_chutes_alvo_h + _chutes_alvo_a) >= cft_chutes_alvo if cft_chutes_alvo > 0 else True
+            cft_chutes_tot_ok = (_chutes_tot_h + _chutes_tot_a) >= cft_chutes_tot if cft_chutes_tot > 0 else True
+            cft_atq_ok = (_ataques_perigosos_h + _ataques_perigosos_a) >= cft_atq if cft_atq > 0 else True
+            cft_media_ok = media_hist >= cft_media if cft_media > 0 and media_hist >= 0 else True
             if not _situacao_fav_ok(M_CFT, GERAL, fav_gols, adv_gols):
                 print(f"[DIAG-CORNER-FT-BARRA] {h} x {a} — situação do favorito não atende critério (fav_gols={fav_gols} adv={adv_gols}), pulando")
             elif red_fav > cft_red_max:
                 print(f"[DIAG-CORNER-FT-BARRA] {h} x {a} — favorito com cartão vermelho ({red_fav} > {cft_red_max}), pulando")
             elif not cft_appm_ok:
                 print(f"[DIAG-CORNER-FT-BARRA] {h} x {a} — APPM insuficiente (casa={_appm_h} fora={_appm_a} total={_appm_total}), pulando")
+            elif not cft_chutes_alvo_ok:
+                print(f"[DIAG-CORNER-FT-BARRA] {h} x {a} — chutes no alvo insuficientes ({_chutes_alvo_h+_chutes_alvo_a} < {cft_chutes_alvo}), pulando")
+            elif not cft_chutes_tot_ok:
+                print(f"[DIAG-CORNER-FT-BARRA] {h} x {a} — chutes totais insuficientes ({_chutes_tot_h+_chutes_tot_a} < {cft_chutes_tot}), pulando")
+            elif not cft_atq_ok:
+                print(f"[DIAG-CORNER-FT-BARRA] {h} x {a} — ataques perigosos insuficientes ({_ataques_perigosos_h+_ataques_perigosos_a} < {cft_atq}), pulando")
+            elif not cft_media_ok:
+                print(f"[DIAG-CORNER-FT-BARRA] {h} x {a} — média histórica {media_hist:.1f} < {cft_media}, pulando")
             elif not cft_esc_ok:
                 print(f"[DIAG-CORNER-FT-BARRA] {h} x {a} — escanteios insuficientes ({_escanteios_h+_escanteios_a} < {cft_escanteios}), pulando")
             else:
