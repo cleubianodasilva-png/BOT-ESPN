@@ -1,5 +1,5 @@
 const CACHE_NAME = 'greens-vip-v2';
-const assets = ['painel.html', 'manifest.json', 'icon.jpg'];
+const assets = ['index.html', 'painel.html', 'manifest.json', 'icon.jpg'];
 self.addEventListener('install', e => {
   self.skipWaiting();
   e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(assets)));
