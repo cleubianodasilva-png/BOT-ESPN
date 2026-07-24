@@ -2200,6 +2200,8 @@ def run():
         _chutes_tot_a = stats.get("chutes_tot_a", 0) if stats else 0
         _escanteios_h = stats.get("escanteios_h", -1) if stats else -1
         _escanteios_a = stats.get("escanteios_a", -1) if stats else -1
+        _posse_h = stats.get("posse_h", 0.0) if stats else 0.0
+        _posse_a = stats.get("posse_a", 0.0) if stats else 0.0
 
         # HISTÓRICO — Média de gols por partida (SokkerPro)
         media_hist = get_media_gols_historica_skp(h, a, stats)
@@ -2221,6 +2223,8 @@ def run():
             ht_media_ok = media_hist >= ht_media if media_hist >= 0 else False
             ht_chutes_alvo_ok = (_chutes_alvo_h + _chutes_alvo_a) >= ht_chutes_alvo
             ht_chutes_tot_ok = (_chutes_tot_h + _chutes_tot_a) >= ht_chutes_tot
+            ht_posse = _crit(M_HT, GERAL, "posse_min", 0)
+            ht_posse_ok = (_posse_h >= ht_posse or _posse_a >= ht_posse) if ht_posse > 0 else True
             if not (sh == 0 and sa == 0):
                 print(f"[DIAG-HT-BARRA] {h} x {a} — placar não é 0x0 ({placar}), pulando")
             elif not _situacao_fav_ok(M_HT, GERAL, fav_gols, adv_gols):
@@ -2263,6 +2267,8 @@ def run():
             b_appm_ok = _appm_h >= b_appm_time or _appm_a >= b_appm_time or _appm_total >= b_appm_total
             b_media_ok = media_hist >= b_media if media_hist >= 0 else False
             b_chutes_ok = (_chutes_alvo_h + _chutes_alvo_a) >= b_chutes_alvo
+            b_posse = _crit(M_BTTS, GERAL, "posse_min", 0)
+            b_posse_ok = (_posse_h >= b_posse or _posse_a >= b_posse) if b_posse > 0 else True
             if not _situacao_fav_ok(M_BTTS, GERAL, fav_gols, adv_gols):
                 print(f"[DIAG-BTTS-BARRA] {h} x {a} — situação do favorito não atende critério (fav_gols={fav_gols} adv={adv_gols}), pulando")
             elif red_fav > b_red_max:
@@ -2332,12 +2338,16 @@ def run():
             og_red_max = _crit(M_OG, GERAL, "max_red_card_fav", 0)
             og_appm_ok = _appm_h >= og_appm_time or _appm_a >= og_appm_time or _appm_total >= og_appm_total
             og_media_ok = media_hist >= og_media if media_hist >= 0 else False
+            og_posse = _crit(M_OG, GERAL, "posse_min", 0)
+            og_posse_ok = (_posse_h >= og_posse or _posse_a >= og_posse) if og_posse > 0 else True
             if not _situacao_fav_ok(M_OG, GERAL, fav_gols, adv_gols):
                 print(f"[DIAG-OVERGOAL-BARRA] {h} x {a} — situação do favorito não atende critério (fav_gols={fav_gols} adv={adv_gols}), pulando")
             elif red_fav > og_red_max:
                 print(f"[DIAG-OVERGOAL-BARRA] {h} x {a} — favorito com cartão vermelho ({red_fav} > {og_red_max}), pulando")
             elif not og_appm_ok:
                 print(f"[DIAG-OVERGOAL-BARRA] {h} x {a} — APPM insuficiente (casa={_appm_h} fora={_appm_a} total={_appm_total}), pulando")
+            elif not og_posse_ok:
+                print(f"[DIAG-OVERGOAL-BARRA] {h} x {a} — posse de bola insuficiente (casa={_posse_h}% fora={_posse_a}% < {og_posse}%), pulando")
             elif not og_media_ok:
                 print(f"[DIAG-OVERGOAL-BARRA] {h} x {a} — média histórica {media_hist:.1f} < {og_media}, pulando")
             else:
@@ -2381,6 +2391,8 @@ def run():
             cht_appm_ok = _appm_h >= cht_appm_time or _appm_a >= cht_appm_time or _appm_total >= cht_appm_total
             cht_esc_ok = (_escanteios_h + _escanteios_a) >= cht_escanteios if _escanteios_h >= 0 and _escanteios_a >= 0 else True
             cht_chutes_alvo_ok = (_chutes_alvo_h + _chutes_alvo_a) >= cht_chutes_alvo if cht_chutes_alvo > 0 else True
+            cht_posse = _crit(M_CHT, GERAL, "posse_min", 0)
+            cht_posse_ok = (_posse_h >= cht_posse or _posse_a >= cht_posse) if cht_posse > 0 else True
             cht_chutes_tot_ok = (_chutes_tot_h + _chutes_tot_a) >= cht_chutes_tot if cht_chutes_tot > 0 else True
             cht_atq_ok = (_ataques_perigosos_h + _ataques_perigosos_a) >= cht_atq if cht_atq > 0 else True
             cht_media_ok = media_hist >= cht_media if cht_media > 0 and media_hist >= 0 else True
@@ -2394,6 +2406,8 @@ def run():
                 print(f"[DIAG-CORNER-HT-BARRA] {h} x {a} — chutes no alvo insuficientes ({_chutes_alvo_h+_chutes_alvo_a} < {cht_chutes_alvo}), pulando")
             elif not cht_chutes_tot_ok:
                 print(f"[DIAG-CORNER-HT-BARRA] {h} x {a} — chutes totais insuficientes ({_chutes_tot_h+_chutes_tot_a} < {cht_chutes_tot}), pulando")
+            elif not cht_posse_ok:
+                print(f"[DIAG-CORNER-HT-BARRA] {h} x {a} — posse de bola insuficiente (casa={_posse_h}% fora={_posse_a}% < {cht_posse}%), pulando")
             elif not cht_atq_ok:
                 print(f"[DIAG-CORNER-HT-BARRA] {h} x {a} — ataques perigosos insuficientes ({_ataques_perigosos_h+_ataques_perigosos_a} < {cht_atq}), pulando")
             elif not cht_media_ok:
@@ -2434,6 +2448,8 @@ def run():
             cft_appm_ok = _appm_h >= cft_appm_time or _appm_a >= cft_appm_time or _appm_total >= cft_appm_total
             cft_esc_ok = (_escanteios_h + _escanteios_a) >= cft_escanteios if _escanteios_h >= 0 and _escanteios_a >= 0 else True
             cft_chutes_alvo_ok = (_chutes_alvo_h + _chutes_alvo_a) >= cft_chutes_alvo if cft_chutes_alvo > 0 else True
+            cft_posse = _crit(M_CFT, GERAL, "posse_min", 0)
+            cft_posse_ok = (_posse_h >= cft_posse or _posse_a >= cft_posse) if cft_posse > 0 else True
             cft_chutes_tot_ok = (_chutes_tot_h + _chutes_tot_a) >= cft_chutes_tot if cft_chutes_tot > 0 else True
             cft_atq_ok = (_ataques_perigosos_h + _ataques_perigosos_a) >= cft_atq if cft_atq > 0 else True
             cft_media_ok = media_hist >= cft_media if cft_media > 0 and media_hist >= 0 else True
@@ -2447,6 +2463,8 @@ def run():
                 print(f"[DIAG-CORNER-FT-BARRA] {h} x {a} — chutes no alvo insuficientes ({_chutes_alvo_h+_chutes_alvo_a} < {cft_chutes_alvo}), pulando")
             elif not cft_chutes_tot_ok:
                 print(f"[DIAG-CORNER-FT-BARRA] {h} x {a} — chutes totais insuficientes ({_chutes_tot_h+_chutes_tot_a} < {cft_chutes_tot}), pulando")
+            elif not cft_posse_ok:
+                print(f"[DIAG-CORNER-FT-BARRA] {h} x {a} — posse de bola insuficiente (casa={_posse_h}% fora={_posse_a}% < {cft_posse}%), pulando")
             elif not cft_atq_ok:
                 print(f"[DIAG-CORNER-FT-BARRA] {h} x {a} — ataques perigosos insuficientes ({_ataques_perigosos_h+_ataques_perigosos_a} < {cft_atq}), pulando")
             elif not cft_media_ok:
