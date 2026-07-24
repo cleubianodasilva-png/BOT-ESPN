@@ -2,7 +2,7 @@
   "name": "PAINEL DE ROB\u00d4S",
   "short_name": "PAINEL",
   "description": "Painel de controle dos rob\u00f4s de sinais",
-  "start_url": "index.html",
+  "start_url": "painel.html",
   "display": "standalone",
   "background_color": "#1a1a2e",
   "theme_color": "#d48821",
