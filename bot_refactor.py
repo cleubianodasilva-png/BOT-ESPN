@@ -164,6 +164,8 @@ SINAIS_FILE     = os.path.join(BASE_DIR, "sinais_pendentes.json")
 RESULTADO_FILE  = os.path.join(BASE_DIR, "resultados.json")
 PERFORMANCE_FILE= os.path.join(BASE_DIR, "performance.json")
 LAST_UPDATE_FILE= os.path.join(BASE_DIR, "last_update.json")
+CONFIG_FILE     = os.path.join(BASE_DIR, "config.json")
+CONFIG_API_PATH = "config.json"
 BRT             = timezone(timedelta(hours=-3))
 
 # ─── Credenciais ───────────────────────────────────────────────────────────────
