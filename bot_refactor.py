@@ -1605,7 +1605,7 @@ def gerar_motivo(mercado, stats, sh, sa, fav_final, minuto, cantos_atual=0):
         return f"Jogo bastante movimentado pelas laterais — {total_cantos} escanteios, {total_chutes} chutes{posse_txt}{vermelho}"
     return f"Jogo equilibrado, ambas criando chances — {chutes_h} chutes de Casa x {chutes_a} de Fora{posse_txt}{vermelho}"
 
-def msg_universal(home, away, minuto, liga, pais, n, mercado, entrada, placar, extra_val=None, cantos_atual=0, stats=None, sh=0, sa=0, fav_final="h", odd_h=None, odd_a=None, odd_b365=None, odd_bano=None):
+def msg_universal(home, away, minuto, liga, pais, n, mercado, entrada, placar, extra_val=None, cantos_atual=0, stats=None, sh=0, sa=0, fav_final="h", odd_h=None, odd_a=None, odd_b365=None, odd_bano=None, nome=None):
     # Definir a entrada conforme os layouts das imagens
     if "CORNER" in mercado or "ESCANTEIO" in mercado:
         linha = cantos_atual + 0.5
@@ -1685,7 +1685,9 @@ def msg_universal(home, away, minuto, liga, pais, n, mercado, entrada, placar, e
     seta = "🚩" # No print é a seta vermelha que o Telegram renderiza como o emoji 🚩 ou similar
     seta_v = "🚩" 
 
-    if "CORNER" in mercado or "ESCANTEIO" in mercado:
+    if nome:
+        title = nome
+    elif "CORNER" in mercado or "ESCANTEIO" in mercado:
         nome_m = mercado.replace('CORNER_', 'ESCANTEIO ÁSIAT/LMT ')
         title = f"🚩🔥{nome_m}🔥🚩"
     else:
@@ -2542,7 +2544,7 @@ def run_ciclo(cfg, GERAL, MERCADOS, M_HT, M_BTTS, M_OFT, M_OG, M_CHT, M_CFT, sen
                 print(f"[DIAG-CUSTOM-DUP-{ck}] {h} x {a} — já enviado hoje")
             else:
                 entrada = cnome
-                mid = send_telegram(msg_universal(h, a, m, liga, pais, 5, ck, entrada, placar, stats=stats, sh=sh, sa=sa, fav_final=fav_final, odd_h=odd_h, odd_a=odd_a), marca=key, home=h, away=a)
+                mid = send_telegram(msg_universal(h, a, m, liga, pais, 5, ck, entrada, placar, stats=stats, sh=sh, sa=sa, fav_final=fav_final, odd_h=odd_h, odd_a=odd_a, nome=cnome), marca=key, home=h, away=a)
                 if mid:
                     sent.add(key)
                     total_env += 1
